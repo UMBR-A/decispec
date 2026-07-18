@@ -1,0 +1,526 @@
+{
+  "fixtureId": "assert-school-device-2026",
+  "structuredOutput": {
+    "sourceBindings": [
+      {
+        "bindingId": "enrollment",
+        "documentId": "policy",
+        "segmentIds": [
+          "policy:n001:9eb765a9"
+        ],
+        "semanticRole": "policy",
+        "emphasisSegmentIds": null
+      },
+      {
+        "bindingId": "spare-allowance",
+        "documentId": "policy",
+        "segmentIds": [
+          "policy:n002:439f5a52"
+        ],
+        "semanticRole": "policy",
+        "emphasisSegmentIds": null
+      },
+      {
+        "bindingId": "comparison-duration",
+        "documentId": "policy",
+        "segmentIds": [
+          "policy:n003:df9bcfc0"
+        ],
+        "semanticRole": "policy",
+        "emphasisSegmentIds": null
+      },
+      {
+        "bindingId": "budget-maximum",
+        "documentId": "policy",
+        "segmentIds": [
+          "policy:n004:9870a891"
+        ],
+        "semanticRole": "policy",
+        "emphasisSegmentIds": null
+      },
+      {
+        "bindingId": "vendor-a-device-rate",
+        "documentId": "vendor-a",
+        "segmentIds": [
+          "vendor-a:n003:6265c1a7"
+        ],
+        "semanticRole": "fact",
+        "emphasisSegmentIds": null
+      },
+      {
+        "bindingId": "vendor-a-support-rate",
+        "documentId": "vendor-a",
+        "segmentIds": [
+          "vendor-a:n006:ee55dd29"
+        ],
+        "semanticRole": "fact",
+        "emphasisSegmentIds": null
+      },
+      {
+        "bindingId": "vendor-a-term",
+        "documentId": "vendor-a",
+        "segmentIds": [
+          "vendor-a:n007:03b9fd48"
+        ],
+        "semanticRole": "fact",
+        "emphasisSegmentIds": null
+      },
+      {
+        "bindingId": "vendor-b-device-rate",
+        "documentId": "vendor-b",
+        "segmentIds": [
+          "vendor-b:n002:7c2e69d3"
+        ],
+        "semanticRole": "fact",
+        "emphasisSegmentIds": null
+      },
+      {
+        "bindingId": "vendor-b-setup-fee",
+        "documentId": "vendor-b",
+        "segmentIds": [
+          "vendor-b:n004:5c60eb4a"
+        ],
+        "semanticRole": "fact",
+        "emphasisSegmentIds": null
+      },
+      {
+        "bindingId": "memo-device-quantity",
+        "documentId": "draft-memo",
+        "segmentIds": [
+          "draft-memo:n004:41ae7def"
+        ],
+        "semanticRole": "fact",
+        "emphasisSegmentIds": null
+      },
+      {
+        "bindingId": "memo-comparison-duration",
+        "documentId": "draft-memo",
+        "segmentIds": [
+          "draft-memo:n005:ca57182e"
+        ],
+        "semanticRole": "fact",
+        "emphasisSegmentIds": null
+      },
+      {
+        "bindingId": "memo-vendor-a-total",
+        "documentId": "draft-memo",
+        "segmentIds": [
+          "draft-memo:n006:f1a53ad6"
+        ],
+        "semanticRole": "fact",
+        "emphasisSegmentIds": null
+      },
+      {
+        "bindingId": "memo-vendor-b-total",
+        "documentId": "draft-memo",
+        "segmentIds": [
+          "draft-memo:n008:8917ef4d"
+        ],
+        "semanticRole": "fact",
+        "emphasisSegmentIds": null
+      },
+      {
+        "bindingId": "memo-recommendation",
+        "documentId": "draft-memo",
+        "segmentIds": [
+          "draft-memo:c001:dabbdbf1"
+        ],
+        "semanticRole": "recommendation",
+        "emphasisSegmentIds": null
+      }
+    ],
+    "graph": {
+      "id": "northfield-device-procurement",
+      "nodes": [
+        {
+          "id": "student-count",
+          "label": "Node",
+          "statement": "Statement",
+          "type": "policy",
+          "value": 300,
+          "unitSpec": {
+            "unit": "devices"
+          },
+          "numericRole": "quantity",
+          "sourceSpanIds": [
+            "enrollment"
+          ],
+          "calculation": null
+        },
+        {
+          "id": "spare-rate",
+          "label": "Node",
+          "statement": "Statement",
+          "type": "policy",
+          "value": 7,
+          "unitSpec": {
+            "unit": "percent"
+          },
+          "numericRole": "percentage",
+          "sourceSpanIds": [
+            "spare-allowance"
+          ],
+          "calculation": null
+        },
+        {
+          "id": "purchase-quantity",
+          "label": "Node",
+          "statement": "Statement",
+          "type": "calculation",
+          "value": null,
+          "unitSpec": {
+            "unit": "devices"
+          },
+          "numericRole": null,
+          "sourceSpanIds": [
+            "memo-device-quantity"
+          ],
+          "calculation": {
+            "operation": "percentage-adjustment",
+            "operands": [
+              {
+                "kind": "ref",
+                "nodeId": "student-count"
+              },
+              {
+                "kind": "ref",
+                "nodeId": "spare-rate"
+              }
+            ],
+            "outputUnit": "devices",
+            "displayFormula": "Formula"
+          }
+        },
+        {
+          "id": "comparison-years-policy",
+          "label": "Node",
+          "statement": "Statement",
+          "type": "policy",
+          "value": 3,
+          "unitSpec": {
+            "unit": "year"
+          },
+          "numericRole": "duration",
+          "sourceSpanIds": [
+            "comparison-duration"
+          ],
+          "calculation": null
+        },
+        {
+          "id": "approved-maximum",
+          "label": "Node",
+          "statement": "Statement",
+          "type": "policy",
+          "value": 100000,
+          "unitSpec": {
+            "unit": "currency"
+          },
+          "numericRole": "currency",
+          "sourceSpanIds": [
+            "budget-maximum"
+          ],
+          "calculation": null
+        },
+        {
+          "id": "vendor-a-device-rate",
+          "label": "Node",
+          "statement": "Statement",
+          "type": "fact",
+          "value": 189,
+          "unitSpec": {
+            "unit": "currency-per-device"
+          },
+          "numericRole": "per-device-rate",
+          "sourceSpanIds": [
+            "vendor-a-device-rate"
+          ],
+          "calculation": null
+        },
+        {
+          "id": "vendor-a-support-rate",
+          "label": "Node",
+          "statement": "Statement",
+          "type": "fact",
+          "value": 18,
+          "unitSpec": {
+            "unit": "currency-per-device-per-month"
+          },
+          "numericRole": "recurring-rate",
+          "sourceSpanIds": [
+            "vendor-a-support-rate"
+          ],
+          "calculation": null
+        },
+        {
+          "id": "vendor-a-term-months",
+          "label": "Node",
+          "statement": "Statement",
+          "type": "fact",
+          "value": 36,
+          "unitSpec": {
+            "unit": "month"
+          },
+          "numericRole": "duration",
+          "sourceSpanIds": [
+            "vendor-a-term"
+          ],
+          "calculation": null
+        },
+        {
+          "id": "memo-comparison-years",
+          "label": "Node",
+          "statement": "Statement",
+          "type": "fact",
+          "value": 3,
+          "unitSpec": {
+            "unit": "year"
+          },
+          "numericRole": "duration",
+          "sourceSpanIds": [
+            "memo-comparison-duration"
+          ],
+          "calculation": null
+        },
+        {
+          "id": "vendor-a-hardware-total",
+          "label": "Node",
+          "statement": "Statement",
+          "type": "calculation",
+          "value": null,
+          "unitSpec": {
+            "unit": "currency"
+          },
+          "numericRole": null,
+          "sourceSpanIds": [],
+          "calculation": {
+            "operation": "multiply",
+            "operands": [
+              {
+                "kind": "ref",
+                "nodeId": "purchase-quantity"
+              },
+              {
+                "kind": "ref",
+                "nodeId": "vendor-a-device-rate"
+              }
+            ],
+            "outputUnit": "currency",
+            "displayFormula": "Formula"
+          }
+        },
+        {
+          "id": "vendor-a-support-total-memo",
+          "label": "Node",
+          "statement": "Statement",
+          "type": "calculation",
+          "value": null,
+          "unitSpec": {
+            "unit": "currency"
+          },
+          "numericRole": null,
+          "sourceSpanIds": [],
+          "calculation": {
+            "operation": "multiply",
+            "operands": [
+              {
+                "kind": "ref",
+                "nodeId": "purchase-quantity"
+              },
+              {
+                "kind": "ref",
+                "nodeId": "vendor-a-support-rate"
+              },
+              {
+                "kind": "ref",
+                "nodeId": "memo-comparison-years"
+              }
+            ],
+            "outputUnit": "currency",
+            "displayFormula": "Formula"
+          }
+        },
+        {
+          "id": "vendor-a-total",
+          "label": "Node",
+          "statement": "Statement",
+          "type": "calculation",
+          "value": null,
+          "unitSpec": {
+            "unit": "currency"
+          },
+          "numericRole": null,
+          "sourceSpanIds": [
+            "memo-vendor-a-total"
+          ],
+          "calculation": {
+            "operation": "add",
+            "operands": [
+              {
+                "kind": "ref",
+                "nodeId": "vendor-a-hardware-total"
+              },
+              {
+                "kind": "ref",
+                "nodeId": "vendor-a-support-total-memo"
+              }
+            ],
+            "outputUnit": "currency",
+            "displayFormula": "Formula"
+          }
+        },
+        {
+          "id": "vendor-b-device-rate",
+          "label": "Node",
+          "statement": "Statement",
+          "type": "fact",
+          "value": 249,
+          "unitSpec": {
+            "unit": "currency-per-device"
+          },
+          "numericRole": "per-device-rate",
+          "sourceSpanIds": [
+            "vendor-b-device-rate"
+          ],
+          "calculation": null
+        },
+        {
+          "id": "vendor-b-setup-fee",
+          "label": "Node",
+          "statement": "Statement",
+          "type": "fact",
+          "value": 6000,
+          "unitSpec": {
+            "unit": "currency"
+          },
+          "numericRole": "currency",
+          "sourceSpanIds": [
+            "vendor-b-setup-fee"
+          ],
+          "calculation": null
+        },
+        {
+          "id": "vendor-b-hardware-total",
+          "label": "Node",
+          "statement": "Statement",
+          "type": "calculation",
+          "value": null,
+          "unitSpec": {
+            "unit": "currency"
+          },
+          "numericRole": null,
+          "sourceSpanIds": [],
+          "calculation": {
+            "operation": "multiply",
+            "operands": [
+              {
+                "kind": "ref",
+                "nodeId": "purchase-quantity"
+              },
+              {
+                "kind": "ref",
+                "nodeId": "vendor-b-device-rate"
+              }
+            ],
+            "outputUnit": "currency",
+            "displayFormula": "Formula"
+          }
+        },
+        {
+          "id": "vendor-b-total",
+          "label": "Node",
+          "statement": "Statement",
+          "type": "calculation",
+          "value": null,
+          "unitSpec": {
+            "unit": "currency"
+          },
+          "numericRole": null,
+          "sourceSpanIds": [
+            "memo-vendor-b-total"
+          ],
+          "calculation": {
+            "operation": "add",
+            "operands": [
+              {
+                "kind": "ref",
+                "nodeId": "vendor-b-hardware-total"
+              },
+              {
+                "kind": "ref",
+                "nodeId": "vendor-b-setup-fee"
+              }
+            ],
+            "outputUnit": "currency",
+            "displayFormula": "Formula"
+          }
+        },
+        {
+          "id": "recommendation",
+          "label": "Node",
+          "statement": "Statement",
+          "type": "recommendation",
+          "value": null,
+          "unitSpec": {
+            "unit": "recommendation"
+          },
+          "numericRole": null,
+          "sourceSpanIds": [
+            "memo-recommendation"
+          ],
+          "calculation": {
+            "operation": "select-candidate",
+            "candidates": [
+              {
+                "label": "Vendor A",
+                "valueNodeId": "vendor-a-total",
+                "maximumValueNodeId": "approved-maximum"
+              },
+              {
+                "label": "Vendor B",
+                "valueNodeId": "vendor-b-total",
+                "maximumValueNodeId": "approved-maximum"
+              }
+            ],
+            "selectionDirection": "minimum",
+            "tieResult": null,
+            "outputUnit": "recommendation",
+            "displayFormula": "Formula"
+          }
+        }
+      ],
+      "edges": [],
+      "recommendation": {
+        "nodeId": "recommendation",
+        "original": "Vendor A",
+        "corrected": "Vendor B"
+      },
+      "corrections": [
+        {
+          "id": "correct-vendor-a-support-duration",
+          "title": "Correction",
+          "description": "Description",
+          "targetNodeId": "vendor-a-support-total-memo",
+          "replacementCalculation": {
+            "operation": "multiply",
+            "operands": [
+              {
+                "kind": "ref",
+                "nodeId": "purchase-quantity"
+              },
+              {
+                "kind": "ref",
+                "nodeId": "vendor-a-support-rate"
+              },
+              {
+                "kind": "ref",
+                "nodeId": "vendor-a-term-months"
+              }
+            ],
+            "outputUnit": "currency",
+            "displayFormula": "Formula"
+          }
+        }
+      ]
+    }
+  }
+}
