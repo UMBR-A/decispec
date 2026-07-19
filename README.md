@@ -2,115 +2,199 @@
 
 **Turn AI recommendations into tests.**
 
-> AI writes the recommendation. Decispec runs the tests.
+AI writes the recommendation. Decispec runs the tests.
 
-## Problem and solution
+[Live demo](https://decispec.vercel.app) · [Repository](https://github.com/UMBR-A/decispec) · [Demo script](submission/demo-script.md)
 
-A polished recommendation can cite the right document and still misuse a billing period, omit a recurring charge, or depend on a broken total. Document summarizers explain what text says; Decispec compiles AI-generated recommendations into executable decision specifications. GPT identifies claims and relationships, while exact source evidence and deterministic code control quotations, numbers, units, dependencies, calculations, corrections, and the final recommendation.
+Decispec compiles an AI-written recommendation and its evidence into an executable decision specification. It binds material claims to exact source passages, recalculates structured operations, checks units and policy constraints, propagates failures through a proof graph, and reports whether the conclusion follows from the declared inputs.
 
-Decispec does not claim universal truth. It verifies the declared evidence, calculations, units, dependencies, assumptions, and selection rule.
+Decispec does not guarantee that a decision is universally correct. It verifies a narrower, useful question: does this recommendation follow from the evidence, assumptions, calculations, dependencies, and selection rule represented in the proof?
 
-## Two honest modes
+## The problem
 
-- **Instant demonstration** loads the bundled school-device fixture. It makes no API request and is always labeled deterministic.
-- **Analyze my decision** sends user-supplied evidence and a draft memo to a server-only GPT-5.6 provider only after **Test decision** is pressed. A failed live analysis returns a safe error; it never substitutes the demo.
+AI can produce a polished recommendation that cites the right documents while still mixing monthly and annual rates, omitting a recurring cost, relying on an unsupported assumption, or carrying a broken total into the final conclusion. Conventional chat and document-summary workflows make these errors difficult to inspect because the evidence-to-conclusion chain remains prose.
 
-TXT and text-based PDF files are extracted on the server. PDF page boundaries are retained in normalized content. Encrypted, malformed, empty, and image-only PDFs are rejected; OCR is not claimed or performed.
+Decispec is designed for people who must review consequential recommendations—procurement, finance, operations, policy, compliance, and technical teams—before acting on them.
 
-## Architecture and trust boundary
+## What Decispec does differently
+
+- **Exact evidence binding:** material claims point to exact source passages rather than free-form citations.
+- **Executable calculations:** derived values use a small set of typed operations; arbitrary expressions, generated code, and `eval` are not allowed.
+- **Unit-aware verification:** currency, device, month, year, rate, percentage, and recommendation units are checked deterministically.
+- **Proof DAG:** calculation and policy dependencies form an acyclic graph evaluated in topological order.
+- **Failure propagation:** a broken input visibly invalidates every dependent claim, total, and recommendation.
+- **Source-bound correction:** a correction changes the executable operation, not the evidence, then rematerializes dependencies and recomputes downstream values.
+- **Deterministic selection:** eligible candidate totals and policy ceilings drive the winner; the model cannot simply assert one.
+- **Auditable artifacts:** the corrected proof can be printed and exported as JSON with evaluated graph statuses, values, sources, assumptions, and report state.
+
+## Try the deterministic demonstration
+
+Open the [live demo](https://decispec.vercel.app) and choose **Instant demonstration**. It is a bundled synthetic school-device decision and requires no API key or network provider.
+
+The imported memo recommends Vendor A. The quote states that support costs **$18 per device per month** for 36 months, but the memo multiplies the monthly rate by three years without an explicit conversion. The arithmetic produces `$17,334`; the dimensions do not produce a valid three-year support cost.
+
+Decispec exposes the load-bearing path:
+
+```text
+Quote A → Support cost → Vendor A total → Recommendation
+```
+
+After the user applies the source-bound correction, the engine recomputes:
+
+| Result | Verified value |
+| --- | ---: |
+| Vendor A support cost | `$208,008` |
+| Vendor A total | `$268,677` |
+| Vendor B total | `$85,929` |
+| Vendor B advantage | `$182,748` |
+| Final recommendation | **Vendor B** |
+
+The demonstration supports correction preview, focused and full graph views, undo/replay, a printable report, and proof JSON export.
+
+## How it works
 
 ```mermaid
 flowchart LR
-  B["Browser: memo + TXT/PDF"] --> X["Server extraction"]
-  X --> O["GPT-5.6 semantic proposal"]
-  O --> Z["Strict Zod + quotation + provenance validation"]
-  Z --> E["Deterministic proof engine"]
-  E --> G["Proof graph + Decision Test Suite"]
+  U["Evidence + draft recommendation"] --> S["Stable source segments"]
+  S --> P["Optional AI semantic proposal"]
+  P --> V["Strict schema, source, numeric, unit, and DAG validation"]
+  V --> E["Deterministic proof engine"]
+  E --> T["Decision Test Suite"]
+  E --> G["Proof graph"]
   E --> R["Report + JSON export"]
 ```
 
-GPT may propose exact source spans, fact/policy nodes, structured calculations, dependencies, assumptions, corrections, and a typed candidate selector. It cannot authoritatively set statuses, arithmetic results, integrity, diffs, or the winner. Provider statuses are reset locally. The engine accepts only enumerated operations; generated code, `eval`, arbitrary expressions, and tool use are forbidden.
+1. TXT or text-based PDF evidence is normalized into bounded documents and stable paragraph, sentence, clause, and numeric-evidence segments.
+2. In optional live mode, GPT proposes source bindings, claims, structured calculations, dependencies, assumptions, corrections, and a typed candidate selector.
+3. Strict Zod schemas and local validators reject unknown or discontinuous segments, unsupported values, invalid units, unknown dependencies, cycles, malformed calculations, and non-executable recommendations.
+4. Provider-authored source values and units are replaced with values recovered locally from bound evidence. Derived values are produced only by structured operations.
+5. The local engine materializes calculation dependencies, evaluates the DAG, checks dimensions, propagates failures, applies atomic corrections, and selects the eligible minimum-cost candidate.
+6. The UI renders the same evaluated state used by the report and exported proof graph.
 
-Security details and a larger diagram are in [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
+The provider is a proposal boundary, not an authority boundary. It cannot authoritatively set claim status, arithmetic, integrity, diffs, or the final winner.
 
-## Bundled proof
+See [the architecture document](docs/ARCHITECTURE.md) and [technical submission summary](submission/technical-summary.md) for more detail.
 
-The imported memo treats a rate quoted at **$18 per device per month** as though three annual multipliers were valid. The local engine breaks support cost, Vendor A total, and the Vendor A recommendation. An explicit correction recomputes:
+## Two honest operating modes
 
-- Vendor A support: $208,008
-- Vendor A total: $268,677
-- Vendor B total: $85,929
-- deterministic recommendation: Vendor B
+### Deterministic demonstration
 
-The focused graph exposes `Quote A → Support cost → Vendor A total → Recommendation`, and **Show full graph** restores the complete DAG.
+- Uses bundled synthetic evidence and a fixed decision graph.
+- Makes no OpenAI API request.
+- Requires no environment variables.
+- Is always labeled as a deterministic demo.
 
-## Setup
+### Optional live analysis
+
+- Runs only after the user explicitly presses **Test decision**.
+- Accepts pasted evidence, TXT files, and text-based PDFs.
+- Uses a server-only OpenAI Responses API provider to propose semantic structure.
+- Validates and executes the result locally before returning evaluated state.
+- Returns a safe configuration error when `OPENAI_API_KEY` is absent.
+- Never substitutes the deterministic fixture when live analysis fails.
+
+The public deployment intentionally has no OpenAI key configured, so the deterministic demonstration is the judge-ready path and live mode reports that analysis is unavailable.
+
+## Architecture and technology
+
+- **Application:** Next.js 16, React 19, TypeScript
+- **Proof visualization:** React Flow
+- **Interaction:** Framer Motion, Lucide icons
+- **Validation:** Zod strict structured schemas and custom provenance/DAG validators
+- **Documents:** `unpdf` for server-side text extraction
+- **Optional provider:** OpenAI Responses API through the server-only OpenAI SDK
+- **Testing:** Vitest, Testing Library, Playwright
+- **Deployment:** Vercel-native Next.js production build
+- **Alternate build path:** Vinext/Vite with Cloudflare-compatible output retained for portability
+
+The repository includes 125 active unit, component, provider, route, replay, export, and metadata tests plus six browser end-to-end scenarios.
+
+## Local setup
 
 Requires Node.js 22.13 or newer.
 
 ```bash
+git clone https://github.com/UMBR-A/decispec.git
+cd decispec
 npm ci
-copy .env.example .env.local
-# add OPENAI_API_KEY only to .env.local
 npm run dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000). The deterministic demonstration needs no key. `.env.local` is ignored by git; the key is read only by the server provider.
+Open [http://localhost:3000](http://localhost:3000), then use **Instant demonstration**. No environment file is needed for that path.
 
-## Verification
+To develop the optional live provider locally, copy `.env.example` to `.env.local` and set `OPENAI_API_KEY` there. `.env.local` is ignored by Git. Never expose the key through a `NEXT_PUBLIC_` variable.
 
-```bash
-npm run typecheck
-npm run lint
-npm test
-npm run build
-npx playwright install chromium  # first machine only
-npm run test:e2e
-```
+## Scripts
 
-`npm run verify` runs typecheck, lint, unit/component/provider/route tests, and the production build. The browser suite covers the deterministic hero flow, focused/full graph, correction/report, mocked live analysis, real TXT/PDF extraction, desktop, and mobile overflow.
+| Command | Purpose |
+| --- | --- |
+| `npm run dev` | Start the Vinext development server |
+| `npm run typecheck` | Run TypeScript without emitting files |
+| `npm run lint` | Run ESLint |
+| `npm test` | Run unit, component, provider, route, replay, and export tests |
+| `npm run test:e2e` | Run the Playwright browser suite |
+| `npm run build` | Build the Vinext/Cloudflare-compatible target |
+| `npm run build:vercel` | Build the native Next.js Vercel target |
+| `npm run verify` | Run typecheck, lint, tests, and Vinext build |
 
-The paid smoke test is deliberately opt-in and must never be run casually:
+The paid live smoke test is separately gated by `ASSERT_LIVE_SMOKE=1` and is not part of ordinary verification.
 
-```bash
-$env:ASSERT_LIVE_SMOKE='1'
-npx vitest run tests/live-analysis-smoke.test.ts
-```
+## Testing and validation
 
-## Routes
+The test strategy covers:
 
-- `/` — product thesis and mode choice
-- `/workspace/demo` — deterministic hero decision
-- `/workspace/live` — explicit live analysis
-- `/report/demo` — printable proof report and proof JSON
-- `/api/documents/extract` — bounded server-side TXT/PDF extraction
-- `/api/analyze` — server-only provider, strict validation, and deterministic evaluation
+- arithmetic, dimensional compatibility, topological evaluation, cycles, and unknown dependencies;
+- source-segment binding, exact quotation materialization, numeric/unit provenance, and prompt-injection resistance;
+- strict Structured Output fields, malformed output, refusals, timeouts, safe errors, and server-only secret behavior;
+- candidate selection, policy eligibility, ties, corrections, dependency materialization, undo, and replay;
+- pre-verification, broken, and corrected report/export agreement with no stale statuses;
+- deterministic and captured provider replays with randomized provider IDs and ordering;
+- responsive desktop/mobile flows, keyboard focus, reduced motion, mocked live analysis, and TXT/PDF extraction.
 
-## Security model
+The deployed baseline passed TypeScript, ESLint, all active tests, both production builds, six Playwright flows, direct-route checks, metadata checks, and public secret/source-map scans.
 
-- `OPENAI_API_KEY` never enters client code, responses, screenshots, or diagnostics.
-- Uploaded documents and memo text are untrusted evidence, never instructions.
-- Exact quotations are recovered conservatively; zero or ambiguous matches are rejected.
-- Numeric evidence must be recoverable from its bound quotation with explicit unit-aware equivalence.
-- Safe diagnostics contain only stage, stable code, schema path/ID, counts/booleans, request ID, latency, and token usage.
-- Requests use `store:false`, no tools, no linked conversation, and zero automatic retries.
+## Security and privacy
 
-## Codex and GPT-5.6
+- `OPENAI_API_KEY` is read only on the server and is never returned to the browser.
+- Uploaded documents and draft memos are treated as untrusted evidence, never instructions.
+- The live request uses `store: false`, no tools, no conversation linkage, and zero automatic retries.
+- Safe diagnostics contain only validation stage, stable code, schema path or safe ID, counts/booleans, request ID, latency, and aggregate token usage.
+- Raw provider output, prompts, quotations, secrets, and raw provider errors are excluded from client diagnostics.
+- Files are bounded to eight documents, 10 MB each, and text limits. Scanned PDFs are rejected honestly because OCR is not implemented.
 
-Codex was used to implement, test, inspect, and document the product. GPT-5.6 Terra is restricted to semantic analysis in live mode. The deterministic TypeScript engine remains authoritative after every provider response.
+## Deployment
+
+The production site is deployed on Vercel from `main` at [https://decispec.vercel.app](https://decispec.vercel.app). The canonical and social metadata use the public production hostname. The deterministic demonstration has no hosted secret dependency.
 
 ## Limitations
 
-- OCR and binary/image understanding are not implemented; scanned PDFs return an honest error.
-- Semantic proposals still require review even after strict validation.
-- ASSERT remains the internal development codename in historical records, validation codes, and gated environment-variable names. The public product name is Decispec.
-- Nothing in this workspace has been deployed, committed, pushed, or published by the overnight run.
+- Decispec verifies the represented evidence and rules; it does not discover every missing fact or guarantee real-world correctness.
+- Live semantic proposals can be rejected and still require human review.
+- The calculation and unit vocabulary is deliberately narrow rather than a general-purpose programming language.
+- OCR, image understanding, spreadsheets, and scanned PDFs are not supported.
+- Evidence quality, document completeness, policy interpretation, and undeclared assumptions remain human responsibilities.
+- The public deployment does not currently configure live OpenAI analysis.
 
-## Demo and submission
+## Roadmap
 
-- [Demo script](docs/DEMO_SCRIPT.md)
-- [Submission checklist](docs/SUBMISSION_CHECKLIST.md)
-- [Overnight verification report](docs/OVERNIGHT_RUN.md)
+- Add OCR and structured spreadsheet evidence with the same provenance boundary.
+- Expand typed policy, time, currency, and eligibility operations without permitting arbitrary code.
+- Add durable decision versions, reviewer comments, approvals, and signed proof artifacts.
+- Build domain-specific evaluation sets and adversarial regression suites.
+- Support enterprise evidence connectors and configurable retention controls.
+
+## License
+
+Decispec is available under the [MIT License](LICENSE). Copyright © 2026 Decispec contributors.
+
+## Submission resources
+
+- [Project description](submission/project-description.md)
+- [Demo scripts](submission/demo-script.md)
+- [Judging notes](submission/judging-notes.md)
+- [Technical summary](submission/technical-summary.md)
+- [Screenshot plan](submission/screenshot-plan.md)
+- [Video shot list](submission/video-shot-list.md)
 
 ![Decispec focused failure path](docs/qa/decispec-focused-broken-path-1440x900.png)
 
