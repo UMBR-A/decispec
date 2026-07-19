@@ -12,6 +12,11 @@ describe("decision workspace hero flow", () => {
     render(<DecisionWorkspace />);
     expect(screen.getByTestId("export-proof")).toBeDisabled();
     expect(screen.getByTestId("view-report")).toBeDisabled();
+    expect(screen.getByText("Ready to run 7 deterministic checks")).toBeInTheDocument();
+    expect(screen.getByTestId("verify-decision")).toHaveTextContent("Run decision tests");
+    expect(screen.getByRole("row", { name: /Inspect Vendor A total/i })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /Enrollment & Device Policy/i })).toHaveAttribute("aria-pressed", "true");
+    expect(screen.getByRole("button", { name: /Imported Draft Decision Memo/i })).toHaveAttribute("aria-pressed", "false");
     fireEvent.click(screen.getByTestId("claim-devices"));
     expect(screen.getByRole("heading", { name: "Required devices" })).toBeInTheDocument();
     expect(screen.getByText("Derived only from declared dependencies.")).toBeInTheDocument();
@@ -30,6 +35,7 @@ describe("decision workspace hero flow", () => {
     expect(screen.getAllByText("$18 per device per month", { selector: "mark" }).length).toBeGreaterThan(0);
 
     fireEvent.click(screen.getByTestId("break-decision"));
+    expect(screen.getByText("The broken dependency path is isolated")).toBeInTheDocument();
     expect(screen.getByTestId("proof-graph")).toHaveAttribute("data-graph-view", "focused");
     expect(screen.getByTestId("proof-graph")).toHaveTextContent("Quote A · $18 / device / month");
     expect(screen.getByTestId("proof-graph")).not.toHaveTextContent("Student enrollment");

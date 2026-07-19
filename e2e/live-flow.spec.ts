@@ -61,9 +61,13 @@ test("keyboard navigation and reduced motion remain usable", async ({ page }) =>
   await page.emulateMedia({ reducedMotion: "reduce" });
   await page.goto("/");
   await page.keyboard.press("Tab");
-  const focused = await page.evaluate(() => ({ tag: document.activeElement?.tagName, text: document.activeElement?.textContent?.trim() }));
-  expect(focused.tag).toBe("A");
-  expect(focused.text).toContain("Instant demonstration");
+  const skipFocused = await page.evaluate(() => ({ tag: document.activeElement?.tagName, text: document.activeElement?.textContent?.trim() }));
+  expect(skipFocused.tag).toBe("A");
+  expect(skipFocused.text).toContain("Skip to main content");
+  await page.keyboard.press("Tab");
+  const primaryActionFocused = await page.evaluate(() => ({ tag: document.activeElement?.tagName, text: document.activeElement?.textContent?.trim() }));
+  expect(primaryActionFocused.tag).toBe("A");
+  expect(primaryActionFocused.text).toContain("Instant demonstration");
   const duration = await page.getByRole("link", { name: "Instant demonstration" }).evaluate((element) => getComputedStyle(element).transitionDuration);
   expect(Number.parseFloat(duration)).toBeLessThanOrEqual(0.01);
 });
