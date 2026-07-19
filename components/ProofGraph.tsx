@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Background, Controls, MarkerType, ReactFlow, type Edge, type Node } from "@xyflow/react";
 import "@xyflow/react/dist/style.css";
 import type { EvaluatedNode } from "../lib/domain/engine";
@@ -30,6 +30,13 @@ const focusedPositions: Record<string, { x: number; y: number }> = {
   recommendation: { x: 810, y: 80 },
 };
 
+const focusedMobilePositions: Record<string, { x: number; y: number }> = {
+  "a-support-rate": { x: 40, y: 0 },
+  "a-support": { x: 40, y: 130 },
+  "a-total": { x: 40, y: 260 },
+  recommendation: { x: 40, y: 390 },
+};
+
 export function ProofGraph({
   nodes,
   edges,
@@ -47,14 +54,25 @@ export function ProofGraph({
   onSelect: (id: string) => void;
   focusedIds?: string[];
 }) {
+  const [narrowViewport, setNarrowViewport] = useState(false);
+
+  useEffect(() => {
+    if (typeof window === "undefined" || !window.matchMedia) return;
+    const query = window.matchMedia("(max-width: 760px)");
+    const update = () => setNarrowViewport(query.matches);
+    update();
+    query.addEventListener?.("change", update);
+    return () => query.removeEventListener?.("change", update);
+  }, []);
+
   const visibleIds = useMemo(() => new Set(focused ? (focusedIds ?? Object.keys(focusedPositions)) : nodes.map((node) => node.id)), [focused, focusedIds, nodes]);
+  const visibleNodes = useMemo(() => nodes.filter((node) => visibleIds.has(node.id)), [nodes, visibleIds]);
   const graphNodes = useMemo<Node[]>(
     () =>
-      nodes
-        .filter((node) => visibleIds.has(node.id))
+      visibleNodes
         .map((node, index) => ({
           id: node.id,
-          position: (focused ? focusedPositions[node.id] : positions[node.id]) ?? { x: (index % 4) * 230, y: Math.floor(index / 4) * 130 },
+          position: (focused ? (narrowViewport ? focusedMobilePositions[node.id] : focusedPositions[node.id]) : positions[node.id]) ?? { x: (index % 4) * 230, y: Math.floor(index / 4) * 130 },
           data: {
             label: node.id === "a-support-rate"
               ? "Quote A · $18 / device / month"
@@ -65,10 +83,11 @@ export function ProofGraph({
                   : node.label,
           },
           className: `proof-node proof-node-${node.status} ${focused ? "proof-node-focused" : ""} ${activeTrace.includes(node.id) ? "proof-node-active" : ""}`,
+          ariaLabel: `${node.label}. ${node.status}. ${node.statusReason}`,
           selected: selectedId === node.id,
-          style: { width: focused ? 232 : node.id === "recommendation" ? 202 : 184 },
+          style: { width: focused ? (narrowViewport ? 250 : 232) : node.id === "recommendation" ? 202 : 184 },
         })),
-    [activeTrace, focused, nodes, selectedId, visibleIds],
+    [activeTrace, focused, narrowViewport, selectedId, visibleNodes],
   );
   const graphEdges = useMemo<Edge[]>(
     () =>
@@ -90,15 +109,16 @@ export function ProofGraph({
   );
 
   return (
-    <div className={`graph-canvas ${focused ? "graph-canvas-focused" : ""}`} data-testid="proof-graph" data-graph-view={focused ? "focused" : "full"} aria-label="Decision dependency graph">
+    <div className={`graph-canvas ${focused ? "graph-canvas-focused" : ""} ${focused && narrowViewport ? "graph-canvas-focused-mobile" : ""}`} data-testid="proof-graph" data-graph-view={focused ? "focused" : "full"} aria-label="Decision dependency graph">
       <ReactFlow
-        key={focused ? "focused" : "full"}
+        key={`${focused ? "focused" : "full"}-${narrowViewport ? "narrow" : "wide"}`}
         nodes={graphNodes}
         edges={graphEdges}
         fitView
-        fitViewOptions={{ padding: 0.14 }}
+        fitViewOptions={{ padding: narrowViewport ? 0.08 : 0.14 }}
         minZoom={0.55}
         maxZoom={1.4}
+        onlyRenderVisibleElements
         nodesDraggable={false}
         nodesConnectable={false}
         elementsSelectable

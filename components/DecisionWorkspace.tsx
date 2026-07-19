@@ -179,7 +179,7 @@ export function DecisionWorkspace() {
   const recommendation = evaluated.nodes.find((node) => node.id === "recommendation");
 
   return (
-    <main className="workspace-shell">
+    <main className="workspace-shell" id="main-content">
       <header className="workspace-header">
         <Link href="/" className="wordmark" aria-label={`${BRAND.productName} home`}><span className="wordmark-mark">{BRAND.monogram}</span> {BRAND.productName}</Link>
         <div className="decision-heading">
@@ -217,7 +217,7 @@ export function DecisionWorkspace() {
           <div className="rail-heading"><div><span className="eyebrow">Evidence set</span><h2>4 source files</h2></div><Search size={17} aria-hidden="true" /></div>
           <nav className="document-list" aria-label="Bundled documents">
             {demoProject.documents.map((doc) => (
-              <button key={doc.id} className={selectedDocument.id === doc.id ? "document-item active" : "document-item"} onClick={() => setSelectedDocumentId(doc.id)}>
+              <button key={doc.id} className={selectedDocument.id === doc.id ? "document-item active" : "document-item"} aria-pressed={selectedDocument.id === doc.id} onClick={() => setSelectedDocumentId(doc.id)}>
                 <FileText size={17} aria-hidden="true" />
                 <span><strong>{doc.title}</strong><small>{doc.pageLabel}</small></span>
               </button>
@@ -242,7 +242,7 @@ export function DecisionWorkspace() {
           <label className="upload-zone">
             <UploadCloud size={20} aria-hidden="true" />
             <strong>Preview a local file</strong>
-            <span>{uploadMessage}</span>
+            <span aria-live="polite">{uploadMessage}</span>
             <input type="file" accept="application/pdf,text/plain,.pdf,.txt" onChange={(event) => onFile(event.target.files?.[0])} />
           </label>
           {uploadPreview && <pre className="upload-preview">{uploadPreview}</pre>}
@@ -266,11 +266,11 @@ export function DecisionWorkspace() {
             <h3>Three-year cost comparison</h3>
             <div className="cost-table" role="table" aria-label="Vendor cost comparison">
               <div role="row" className="cost-row cost-head"><span role="columnheader">Vendor</span><span role="columnheader">Hardware</span><span role="columnheader">Support + setup</span><span role="columnheader">3-year total</span></div>
-              <button role="row" className={`cost-row ${aTotal?.status === "broken" && isVerified ? "row-broken" : ""}`} onClick={() => selectClaim("a-total")} data-testid="vendor-a-total">
-                <strong role="cell">Vendor A</strong><span role="cell">$60,669</span><span role="cell">{isCorrected ? "$208,008" : "$17,334"}</span><span role="cell"><strong>{money(aTotal?.value)}</strong> <StatusMark status={isVerified ? aTotal!.status : "pending"} compact /></span>
+              <button role="row" className={`cost-row ${aTotal?.status === "broken" && isVerified ? "row-broken" : ""}`} onClick={() => selectClaim("a-total")} data-testid="vendor-a-total" aria-label={`Inspect Vendor A total, ${money(aTotal?.value)}, ${isVerified ? aTotal?.status : "pending"}`}>
+                <strong role="cell">Vendor A</strong><span role="cell" data-label="Hardware">$60,669</span><span role="cell" data-label="Support + setup">{isCorrected ? "$208,008" : "$17,334"}</span><span role="cell" data-label="3-year total"><strong>{money(aTotal?.value)}</strong> <StatusMark status={isVerified ? aTotal!.status : "pending"} compact /></span>
               </button>
-              <button role="row" className="cost-row" onClick={() => selectClaim("b-total")}>
-                <strong role="cell">Vendor B</strong><span role="cell">$79,929</span><span role="cell">$6,000</span><span role="cell"><strong>{money(bTotal?.value)}</strong> <StatusMark status={isVerified ? bTotal!.status : "pending"} compact /></span>
+              <button role="row" className="cost-row" onClick={() => selectClaim("b-total")} aria-label={`Inspect Vendor B total, ${money(bTotal?.value)}, ${isVerified ? bTotal?.status : "pending"}`}>
+                <strong role="cell">Vendor B</strong><span role="cell" data-label="Hardware">$79,929</span><span role="cell" data-label="Support + setup">$6,000</span><span role="cell" data-label="3-year total"><strong>{money(bTotal?.value)}</strong> <StatusMark status={isVerified ? bTotal!.status : "pending"} compact /></span>
               </button>
             </div>
             <p className="memo-note">Comparison basis: three-year total cost of ownership. <button className="text-link" onClick={() => selectClaim("price-assumption")}>Review declared assumptions</button>.</p>
@@ -282,11 +282,17 @@ export function DecisionWorkspace() {
           </section>
 
           <div className="primary-action-row">
-            {phase === "idle" && <button className="button button-primary" data-testid="verify-decision" onClick={verify}>Verify decision <ArrowRight size={17} /></button>}
+            <div className="action-context">
+              <strong>{phase === "idle" ? "Ready to run 7 deterministic checks" : phase === "verifying" ? "Testing the recommendation" : phase === "verified" ? "A load-bearing failure was found" : phase === "stress" ? "The broken dependency path is isolated" : "The correction has been recomputed"}</strong>
+              <span>{phase === "idle" ? "Evidence is bound. Run the suite to test whether Vendor A follows." : phase === "verifying" ? verificationStages[verificationStage] : phase === "verified" ? "Trace the monthly support error through the recommendation." : phase === "stress" ? "Review the before/after values, then apply the source-bound correction." : "Vendor B now follows from the corrected totals and budget policy."}</span>
+            </div>
+            <div className="action-controls">
+            {phase === "idle" && <button className="button button-primary" data-testid="verify-decision" onClick={verify}>Run decision tests <ArrowRight size={17} /></button>}
             {phase === "verifying" && <div className="verification-progress"><div className="progress-track"><span style={{ width: `${((verificationStage + 1) / verificationStages.length) * 100}%` }} /></div><span>{verificationStages[verificationStage]}</span></div>}
             {phase === "verified" && <button className="button button-danger" data-testid="break-decision" onClick={breakDecision}><FlaskConical size={17} /> Break this decision</button>}
             {phase === "stress" && traceCount >= failurePath.length && <button className="button button-danger" onClick={correct} data-testid="apply-correction">Apply source-bound correction <ArrowRight size={17} /></button>}
             {phase === "corrected" && <><button className="button button-primary" onClick={breakDecision}><FlaskConical size={17} /> Replay propagation</button><button className="button button-quiet" onClick={reset} data-testid="reset-correction"><RotateCcw size={16} /> Undo correction</button></>}
+            </div>
           </div>
 
           {(phase === "stress" || phase === "corrected") && (
@@ -328,9 +334,9 @@ export function DecisionWorkspace() {
       </div>
 
       <section className="graph-section" id="proof-graph-section" ref={graphSectionRef}>
-        <button className="graph-heading" onClick={() => setGraphOpen((open) => !open)} aria-expanded={graphOpen}><div><span className="eyebrow">Executable proof graph</span><h2>{isCorrected ? "Correction recomputed in topological order" : phase === "stress" ? "Quote → Support cost → Vendor A total → Recommendation" : isVerified ? "Failure propagation path" : "15 claims · 15 dependencies"}</h2></div><div className="graph-legend"><span><i className="legend-supported" /> supported</span><span><i className="legend-calculated" /> calculated</span><span><i className="legend-broken" /> broken</span><ChevronDown className={graphOpen ? "chevron-open" : ""} size={20} /></div></button>
+        <button className="graph-heading" onClick={() => setGraphOpen((open) => !open)} aria-expanded={graphOpen} aria-controls="proof-graph-panel"><div><span className="eyebrow">Executable proof graph</span><h2>{isCorrected ? "Correction recomputed in topological order" : phase === "stress" ? "Quote → Support cost → Vendor A total → Recommendation" : isVerified ? "Failure propagation path" : "15 claims · 15 dependencies"}</h2></div><div className="graph-legend"><span><i className="legend-supported" /> supported</span><span><i className="legend-calculated" /> calculated</span><span><i className="legend-broken" /> broken</span><ChevronDown className={graphOpen ? "chevron-open" : ""} size={20} aria-hidden="true" /></div></button>
         {graphOpen && phase === "stress" && <div className="graph-focus-bar"><span><strong>Decision broken</strong><small>{focusedPath ? "Focused failure path · unrelated claims are temporarily hidden." : "Complete dependency graph · the broken path remains highlighted."}</small></span><button className="button button-quiet" data-testid="toggle-graph-focus" onClick={() => setFocusedPath((focused) => !focused)}>{focusedPath ? "Show full graph" : "Focus broken path"}</button></div>}
-        {graphOpen && <ProofGraph nodes={pendingNodes} edges={graph.edges} activeTrace={activeTrace} focused={phase === "stress" && focusedPath} selectedId={selectedId} onSelect={selectClaim} />}
+        {graphOpen && <div id="proof-graph-panel"><ProofGraph nodes={pendingNodes} edges={graph.edges} activeTrace={activeTrace} focused={phase === "stress" && focusedPath} selectedId={selectedId} onSelect={selectClaim} /></div>}
       </section>
     </main>
   );

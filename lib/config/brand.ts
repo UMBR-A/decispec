@@ -5,7 +5,7 @@ export const BRAND = {
   tagline: "Turn AI recommendations into tests.",
   supportingPositioning: "AI writes the recommendation. Decispec runs the tests.",
   shortDescription: "Decispec compiles AI-generated recommendations into executable decision specifications.",
-  explanation: "GPT identifies claims and relationships, while exact source evidence and deterministic code control quotations, numbers, units, dependencies, calculations, corrections, and the final recommendation.",
+  explanation: "Upload the evidence and an AI-written recommendation. Decispec binds each claim to exact source text, reruns the calculations in deterministic code, and shows whether the conclusion follows.",
   reportLabel: "DECISPEC / PROOF REPORT",
   socialPreviewAlt: "Decispec decision test showing a source-bound unit failure",
   exportMetadata: {

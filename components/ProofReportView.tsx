@@ -33,7 +33,7 @@ export function ProofReportView({ corrected, generatedAt }: { corrected: boolean
   };
 
   return (
-    <main className="report-page">
+    <main className="report-page" id="main-content">
       <nav className="report-toolbar no-print">
         <Link className="wordmark" href="/" aria-label={`${BRAND.productName} home`}><span className="wordmark-mark">{BRAND.monogram}</span> {BRAND.productName}</Link>
         <div><Link className="button button-quiet" href="/workspace/demo">Back to workspace</Link><button className="button button-quiet" onClick={download}><Download size={15} /> Download JSON</button><button className="button button-primary" onClick={() => window.print()}><Printer size={15} /> Print / Save PDF</button></div>
@@ -54,11 +54,11 @@ export function ProofReportView({ corrected, generatedAt }: { corrected: boolean
         </div>
         <section className="report-section">
           <span className="report-section-label">Before / after</span><h2>One source-bound correction</h2>
-          <table><thead><tr><th>Claim</th><th>Imported memo</th><th>Corrected proof</th></tr></thead><tbody>
+          <div className="report-table-scroll" tabIndex={0} role="region" aria-label="Scrollable before and after comparison"><table><thead><tr><th>Claim</th><th>Imported memo</th><th>Corrected proof</th></tr></thead><tbody>
             <tr><th>Vendor A support</th><td>$17,334 <small>321 × $18 × 3 years</small></td><td>$208,008 <small>321 × $18 × 36 months</small></td></tr>
             <tr><th>Vendor A total</th><td>$78,003</td><td>$268,677</td></tr>
             <tr><th>Recommendation</th><td>Vendor A</td><td>Vendor B</td></tr>
-          </tbody></table>
+          </tbody></table></div>
         </section>
         <div className="report-columns">
           <section><span className="report-section-label">Material failure</span><h2>Monthly ≠ annual</h2><p>The quote states “$18 per device per month” for a 36-month term. The imported expression used three multipliers, which is dimensionally incompatible.</p><div className="report-callout">No evidence was silently repaired. The corrected state exists only after explicit application.</div></section>
