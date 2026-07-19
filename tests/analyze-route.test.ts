@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { handleAnalysisRequest } from "../app/api/analyze/route";
 import { demoProject } from "../lib/demo/fixture";
 import { AnalysisProviderError, type AnalysisInput, type AnalysisProvider, type AnalysisResult } from "../lib/providers/analysis-provider";
@@ -18,6 +18,18 @@ function request(body: unknown): Request {
 }
 
 describe("POST /api/analyze", () => {
+  afterEach(() => vi.unstubAllEnvs());
+
+  it("fails safely without a server API key and never starts provider analysis", async () => {
+    vi.stubEnv("OPENAI_API_KEY", "");
+    const response = await handleAnalysisRequest(request(input));
+    expect(response.status).toBe(503);
+    await expect(response.json()).resolves.toEqual({
+      error: "Live analysis is not configured.",
+      code: "configuration",
+    });
+  });
+
   it("returns sanitized proposal plus local evaluation with no-store caching", async () => {
     const provider: AnalysisProvider = { name: "Test provider", mode: "live-openai", async analyze() { return { ...result, rawResponse: "must-not-leak" } as AnalysisResult; } };
     const response = await handleAnalysisRequest(request(input), provider);

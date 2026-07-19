@@ -44,6 +44,9 @@ export default defineConfig(async () => {
   const { cloudflare } = await import("@cloudflare/vite-plugin");
 
   return {
+    // Vinext's RSC transform loads this client dependency from several routes.
+    // Excluding it avoids inconsistent cold-start prebundling under concurrency.
+    optimizeDeps: { exclude: ["lucide-react"] },
     server: isCodexSeatbeltSandbox
       ? { watch: { useFsEvents: false, usePolling: true } }
       : undefined,

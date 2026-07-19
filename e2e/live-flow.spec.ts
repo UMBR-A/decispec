@@ -52,6 +52,9 @@ test("mobile landing and live input have no horizontal page overflow", async ({ 
   await page.setViewportSize({ width: 390, height: 844 });
   for (const path of ["/", "/workspace/live"]) {
     await page.goto(path);
+    if (path === "/workspace/live") {
+      await expect(page.locator("html")).toHaveAttribute("data-assert-live-hydrated", "true");
+    }
     const overflow = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
     expect(overflow).toBeLessThanOrEqual(1);
   }

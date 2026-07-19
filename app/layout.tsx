@@ -1,9 +1,10 @@
 import type { Metadata } from "next";
 import "./globals.css";
 import { BRAND } from "../lib/config/brand";
+import { resolveMetadataBase } from "../lib/config/site-url";
 
 export const metadata: Metadata = {
-  metadataBase: new URL("http://localhost:3000"),
+  metadataBase: resolveMetadataBase(),
   title: `${BRAND.productName} — ${BRAND.tagline}`,
   description: BRAND.shortDescription,
   icons: { icon: "/favicon.svg", shortcut: "/favicon.svg" },

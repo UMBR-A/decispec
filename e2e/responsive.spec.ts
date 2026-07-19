@@ -16,6 +16,7 @@ test("landing and workspace stay within desktop, laptop, tablet, and mobile view
     await expect.poll(() => page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth)).toBe(true);
 
     await page.goto("/workspace/demo");
+    await expect(page.locator("html")).toHaveAttribute("data-assert-hydrated", "true");
     await expect(page.getByRole("heading", { name: "Decision Test Suite" })).toBeVisible();
     await expect(page.getByTestId("verify-decision")).toBeVisible();
     await expect.poll(() => page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth)).toBe(true);
