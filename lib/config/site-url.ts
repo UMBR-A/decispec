@@ -6,23 +6,19 @@ export function resolveMetadataBase(
   environment: MetadataEnvironment = process.env,
 ): URL {
   const vercelHost =
-    environment.VERCEL_URL?.trim() ||
-    environment.VERCEL_PROJECT_PRODUCTION_URL?.trim();
+    environment.VERCEL_PROJECT_PRODUCTION_URL?.trim() ||
+    environment.VERCEL_URL?.trim();
 
   if (!vercelHost) return new URL(LOCAL_METADATA_BASE);
 
-  if (vercelHost.startsWith("http://")) {
-    throw new Error("Vercel metadata URLs must use HTTPS.");
-  }
-
-  const candidate = vercelHost.startsWith("https://")
+  const candidate = /^https?:\/\//i.test(vercelHost)
     ? vercelHost
     : `https://${vercelHost}`;
   const url = new URL(candidate);
 
-  if (url.protocol !== "https:") {
-    throw new Error("Vercel metadata URLs must use HTTPS.");
+  if (url.protocol !== "http:" && url.protocol !== "https:") {
+    throw new Error("Metadata URLs must use HTTP or HTTPS.");
   }
 
-  return url;
+  return new URL(url.origin);
 }

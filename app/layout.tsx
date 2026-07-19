@@ -5,6 +5,7 @@ import { resolveMetadataBase } from "../lib/config/site-url";
 
 export const metadata: Metadata = {
   metadataBase: resolveMetadataBase(),
+  alternates: { canonical: "/" },
   title: `${BRAND.productName} — ${BRAND.tagline}`,
   description: BRAND.shortDescription,
   icons: { icon: "/favicon.svg", shortcut: "/favicon.svg" },
