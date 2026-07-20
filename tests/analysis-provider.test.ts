@@ -199,6 +199,12 @@ describe("production provider prompt source-binding requirements", () => {
     expect(SYSTEM_INSTRUCTIONS).toContain("Use multiple segments only when every segment is necessary");
   });
 
+  it("requires nullable single-segment emphasis within the authoritative binding", () => {
+    expect(SYSTEM_INSTRUCTIONS).toContain("Set emphasisSegmentIds to null by default");
+    expect(SYSTEM_INSTRUCTIONS).toContain("exactly one segment ID that is already present in segmentIds");
+    expect(SYSTEM_INSTRUCTIONS).toContain("never use emphasisSegmentIds for multiple or discontinuous passages");
+  });
+
   it("forbids model-authored quotation text", () => {
     expect(SYSTEM_INSTRUCTIONS).toContain("never reproduce, paraphrase, or invent quotation text");
   });
