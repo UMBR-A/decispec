@@ -1,0 +1,6 @@
+The recommendation selects Vendor A.
+It incorrectly treats $2,,334 per month as $2,334 per year.
+It calculates Vendor A's three-year cost as $187,002.
+It calculates Vendor B's three-year cost as $213,750.
+Deployment speed supports the recommendation.
+The recommendation assumes deployment matters more than warranty.

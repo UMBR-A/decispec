@@ -108,7 +108,7 @@ function validateReplay(artifact: ReplayArtifact) {
 
 function referencedNodeIds(calculation: CalculationSpec | undefined): string[] {
   if (!calculation) return [];
-  if (calculation.operation === "select-candidate") return [...new Set(calculation.candidates.flatMap((candidate) => [candidate.valueNodeId, candidate.maximumValueNodeId]))];
+  if (calculation.operation === "select-candidate") return [...new Set(calculation.candidates.flatMap((candidate) => [candidate.valueNodeId, ...(candidate.maximumValueNodeId ? [candidate.maximumValueNodeId] : [])]))];
   if (calculation.operation === "convert-duration") return [calculation.inputNodeId];
   return calculation.operands.flatMap((operand) => operand.kind === "ref" ? [operand.nodeId] : []);
 }
@@ -230,7 +230,7 @@ function shuffle<T>(items: T[], seed: number): T[] {
 
 function remapCalculation(calculation: ProviderAnalysisPlan["graph"]["nodes"][number]["calculation"], ref: (id: string) => string) {
   if (calculation === null) return null;
-  if (calculation.operation === "select-candidate") return { ...calculation, candidates: calculation.candidates.map((candidate) => ({ ...candidate, valueNodeId: ref(candidate.valueNodeId), maximumValueNodeId: ref(candidate.maximumValueNodeId) })) };
+  if (calculation.operation === "select-candidate") return { ...calculation, candidates: calculation.candidates.map((candidate) => ({ ...candidate, valueNodeId: ref(candidate.valueNodeId), maximumValueNodeId: candidate.maximumValueNodeId ? ref(candidate.maximumValueNodeId) : null })) };
   if (calculation.operation === "convert-duration") return { ...calculation, inputNodeId: ref(calculation.inputNodeId) };
   return { ...calculation, operands: calculation.operands.map((operand) => operand.kind === "ref" ? { ...operand, nodeId: ref(operand.nodeId) } : operand) };
 }

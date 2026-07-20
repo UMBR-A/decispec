@@ -1,0 +1,14 @@
+Vendor A implementation cost: $180,000
+Vendor A support cost: $2,334 per month
+Vendor A deployment: 4 months
+Vendor A annual savings: $52,000
+Vendor A warranty: 3 years
+Vendor B implementation cost: $210,000
+Vendor B support cost: $1,250 per month
+Vendor B deployment: 5 months
+Vendor B annual savings: $61,000
+Vendor B warranty: 5 years
+Costs must be evaluated over 3 years
+Deployment only affects the decision if the total-cost difference is below 10%
+Warranty must not be monetized
+Only documented costs may be used

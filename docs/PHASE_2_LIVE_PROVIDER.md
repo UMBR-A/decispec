@@ -1,13 +1,13 @@
 # Phase 2 live analysis provider boundary
 
-Phase 1 stops at a schema-validated provider interface and a deterministic demo implementation. It does not call an AI service, include an SDK, inspect credentials, or configure secrets.
+The live provider is implemented behind a strict server-only boundary. It remains separate from the bundled deterministic demonstration and is invoked only after explicit user action.
 
-The future live provider will:
+The live provider:
 
 - Implement the existing `AnalysisProvider` contract without changing graph evaluation or product state.
 - Run only on the server.
 - Read `OPENAI_API_KEY` only in the server environment and never expose it to client code, logs, exports, or browser-visible configuration.
-- Use the OpenAI Responses API with the `gpt-5.6` model alias.
+- Uses the OpenAI Responses API with the configured `OPENAI_MODEL` (default `gpt-5.6`), `store: false`, no tools, and zero SDK retries.
 - Use Structured Outputs that match the runtime domain schema.
 - Normalize source documents and draft memo text before analysis.
 - Send files at an intentional detail level appropriate to the evidence task, avoiding unnecessary fidelity and data exposure.
@@ -16,4 +16,12 @@ The future live provider will:
 
 The deterministic proof engine remains authoritative for graph validation, cycle rejection, source-ID validation, calculation execution, unit tests, state propagation, corrections, diffs, and proof reports. Provider-produced semantic judgments remain visible and reviewable.
 
-Phase 2 should add server-route tests for schema failures, provider timeouts, malformed source references, and safe error disclosure before the live provider is enabled in the interface.
+Local configuration lives only in ignored `.env.local`:
+
+```dotenv
+OPENAI_API_KEY=your-project-key
+OPENAI_PROVIDER=openai
+OPENAI_MODEL=gpt-5.6
+```
+
+`GET /api/analyze/status` returns only readiness booleans plus provider/model names. It never returns, logs, hashes, or partially reveals the key. Missing keys, unsupported providers, invalid model names, authentication, quota, rate limits, timeouts, transport failures, refusals, schema rejections, and local validation rejections use distinct safe codes. Live failures never substitute the deterministic fixture.

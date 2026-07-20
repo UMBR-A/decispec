@@ -18,7 +18,7 @@ export type RecoveredSourceNumber = {
 export function numericRoleForUnit(unit: Unit): SourceNumericRole | null {
   if (unit === "currency" || unit === "three-year-total") return "currency";
   if (unit === "currency-per-device") return "per-device-rate";
-  if (unit === "currency-per-device-per-month") return "recurring-rate";
+  if (unit === "currency-per-month" || unit === "currency-per-device-per-month") return "recurring-rate";
   if (unit === "month" || unit === "year") return "duration";
   if (unit === "percent" || unit === "ratio") return "percentage";
   if (unit === "devices") return "quantity";
@@ -71,6 +71,11 @@ export function recoverSourceNumbers(exactOriginalQuote: string): RecoveredSourc
     const time = (match[1] ?? match[2]).toLowerCase();
     if (time !== "month") continue;
     add(match, numericValue(match[0].match(/\$\s*\d[\d,]*(?:\.\d+)?/)?.[0] ?? ""), "currency-per-device-per-month", "recurring-rate");
+  }
+  for (const match of text.matchAll(/\$\s*\d[\d,]*(?:\.\d+)?\s*(?:per\s+(month|year)|\/\s*(month|year))/gi)) {
+    const time = (match[1] ?? match[2]).toLowerCase();
+    if (time !== "month") continue;
+    add(match, numericValue(match[0].match(/\$\s*\d[\d,]*(?:\.\d+)?/)?.[0] ?? ""), "currency-per-month", "recurring-rate");
   }
   for (const match of text.matchAll(/\$\s*\d[\d,]*(?:\.\d+)?\s*(?:per\s+device|\/\s*device)(?!\s*\/)/gi)) {
     if (covered(match.index ?? -1)) continue;

@@ -80,7 +80,7 @@ const ProviderCandidateSelectionSchema = z.object({
   candidates: z.array(z.object({
     label: z.string().min(1).describe("Canonical candidate label; reuse this exact string in graph.recommendation.original and graph.recommendation.corrected."),
     valueNodeId: z.string().min(1),
-    maximumValueNodeId: z.string().min(1),
+    maximumValueNodeId: z.string().min(1).nullable().describe("Optional source-bound numeric eligibility ceiling. Use null when the evidence declares no ceiling."),
   })).min(2),
   selectionDirection: z.literal("minimum"),
   tieResult: z.string().nullable(),
@@ -187,7 +187,7 @@ export interface AnalysisProvider {
 
 export class AnalysisProviderError extends Error {
   constructor(
-    readonly code: "configuration" | "transport" | "authentication" | "quota" | "rate_limit" | "model_access" | "timeout" | "refusal" | "schema_rejection" | "validation_rejection" | "upstream",
+    readonly code: "configuration" | "missing_api_key" | "unsupported_provider" | "invalid_model" | "transport" | "authentication" | "quota" | "rate_limit" | "model_access" | "timeout" | "refusal" | "schema_rejection" | "validation_rejection" | "upstream",
     message: string,
     options?: ErrorOptions & {
       requestId?: string | null;
@@ -332,7 +332,7 @@ export function extractNormalizedNumbers(text: string): number[] {
   return extractSourceNumericValues(text).map((number) => number.kind === "percent" ? number.value / 100 : number.value);
 }
 
-const CURRENCY_UNITS = new Set<Unit>(["currency", "currency-per-device", "currency-per-device-per-month", "three-year-total"]);
+const CURRENCY_UNITS = new Set<Unit>(["currency", "currency-per-device", "currency-per-month", "currency-per-device-per-month", "three-year-total"]);
 
 export function isSourceNumericValueBound(value: number, unit: Unit, source: SourceNumericValue): boolean {
   if (source.kind === "period") return unit === source.periodUnit && value === source.value;
@@ -445,7 +445,7 @@ function providerCalculationDependencies(calculation: z.infer<typeof ProviderCal
   if (calculation.operation === "select-candidate") {
     return [...new Map(calculation.candidates.flatMap((candidate) => [
       { nodeId: candidate.valueNodeId, kind: "calculation-input" as const },
-      { nodeId: candidate.maximumValueNodeId, kind: "policy" as const },
+      ...(candidate.maximumValueNodeId ? [{ nodeId: candidate.maximumValueNodeId, kind: "policy" as const }] : []),
     ]).map((descriptor) => [`${descriptor.kind}:${descriptor.nodeId}`, descriptor])).values()];
   }
   if (calculation.operation === "convert-duration") return [{ nodeId: calculation.inputNodeId, kind: "calculation-input" }];
@@ -533,15 +533,15 @@ function validateGraphStructure(proposal: ProviderAnalysisPlan, nodeIds: Set<str
       for (const [candidateIndex, candidate] of node.calculation.candidates.entries()) {
         const candidatePath = `${calculationPath}.candidates[${candidateIndex}]`;
         const valueNode = nodes.get(candidate.valueNodeId);
-        const maximumNode = nodes.get(candidate.maximumValueNodeId);
+        const maximumNode = candidate.maximumValueNodeId ? nodes.get(candidate.maximumValueNodeId) : null;
         if (!valueNode) {
           failValidation({ stage: "dependencies", code: "INVALID_CANDIDATE_REFERENCE", path: `${candidatePath}.valueNodeId`, id: diagnosticId(node.id) }, "UNDECLARED_DEPENDENCY");
         }
-        if (!maximumNode) {
+        if (candidate.maximumValueNodeId && !maximumNode) {
           failValidation({ stage: "recommendation", code: "POLICY_REFERENCE_MISSING", path: `${candidatePath}.maximumValueNodeId`, id: diagnosticId(node.id) }, "UNDECLARED_DEPENDENCY");
         }
         const valueIsNumeric = valueNode.calculation !== null && valueNode.calculation.outputUnit !== "recommendation" && (valueNode.unitSpec.unit === "currency" || valueNode.unitSpec.unit === "three-year-total");
-        const maximumIsNumericPolicy = maximumNode.type === "policy" && typeof maximumNode.value === "number";
+        const maximumIsNumericPolicy = maximumNode == null || (maximumNode.type === "policy" && typeof maximumNode.value === "number");
         if (!valueIsNumeric) {
           failValidation({ stage: "calculations", code: "CANDIDATE_VALUE_NOT_CALCULATED", path: `${candidatePath}.valueNodeId`, id: diagnosticId(node.id) }, "INPUT_TYPE_MISMATCH");
         }
@@ -551,7 +551,7 @@ function validateGraphStructure(proposal: ProviderAnalysisPlan, nodeIds: Set<str
         if (!edgeKeys.has(JSON.stringify([candidate.valueNodeId, node.id, "calculation-input"]))) {
           failValidation({ stage: "edges", code: "CANDIDATE_NOT_DECLARED_DEPENDENCY", path: `${candidatePath}.valueNodeId`, id: diagnosticId(node.id) }, "UNDECLARED_DEPENDENCY");
         }
-        if (!edgeKeys.has(JSON.stringify([candidate.maximumValueNodeId, node.id, "policy"]))) {
+        if (candidate.maximumValueNodeId && !edgeKeys.has(JSON.stringify([candidate.maximumValueNodeId, node.id, "policy"]))) {
           failValidation({ stage: "edges", code: "POLICY_REFERENCE_MISSING", path: `${candidatePath}.maximumValueNodeId`, id: diagnosticId(node.id) }, "UNDECLARED_DEPENDENCY");
         }
       }
@@ -570,7 +570,7 @@ function validateGraphStructure(proposal: ProviderAnalysisPlan, nodeIds: Set<str
     } else {
       const arithmetic = node.calculation;
       if (arithmetic) {
-        const referencesRecurringRate = arithmetic.operands.some((operand) => operand.kind === "ref" && nodes.get(operand.nodeId)?.unitSpec.unit === "currency-per-device-per-month");
+        const referencesRecurringRate = arithmetic.operands.some((operand) => operand.kind === "ref" && ["currency-per-month", "currency-per-device-per-month"].includes(nodes.get(operand.nodeId)?.unitSpec.unit ?? ""));
         const hasDuration = arithmetic.operands.some((operand) => operand.kind === "literal" ? operand.unit === "month" || operand.unit === "year" : ["month", "year"].includes(nodes.get(operand.nodeId)?.unitSpec.unit ?? ""));
         const hasBareDuration = arithmetic.operands.some((operand) => operand.kind === "literal" && operand.unit === "scalar");
         if (referencesRecurringRate && !hasDuration && hasBareDuration) {
@@ -705,7 +705,7 @@ export function validateProviderProposal(rawProposal: unknown, rawInput: Analysi
       const unitOf = (operand: z.infer<typeof ProviderOperandSchema>) => operand.kind === "literal" ? operand.unit : proposal.graph.nodes.find((node) => node.id === operand.nodeId)?.unitSpec.unit;
       const originalUnits = target.calculation.operands.map(unitOf);
       const replacementUnits = correction.replacementCalculation.operands.map(unitOf);
-      const referencesMonthlyRate = target.calculation.operands.some((operand) => operand.kind === "ref" && proposal.graph.nodes.find((node) => node.id === operand.nodeId)?.unitSpec.unit === "currency-per-device-per-month");
+      const referencesMonthlyRate = target.calculation.operands.some((operand) => operand.kind === "ref" && ["currency-per-month", "currency-per-device-per-month"].includes(proposal.graph.nodes.find((node) => node.id === operand.nodeId)?.unitSpec.unit ?? ""));
       if (referencesMonthlyRate && replacementUnits.includes("month") && !originalUnits.includes("year")) {
         failValidation({ stage: "units", code: originalUnits.includes("scalar") ? "DURATION_UNIT_MISSING" : "IMPLICIT_UNIT_CONVERSION", path: `$.graph.corrections[${correctionIndex}]`, id: diagnosticId(correction.id), counts: { originalYearOperands: 0, replacementMonthOperands: replacementUnits.filter((unit) => unit === "month").length }, state: { faultyMemoOperationPreserved: false } });
       }

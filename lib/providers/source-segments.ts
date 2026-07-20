@@ -111,6 +111,7 @@ function addCandidate(candidates: Candidate[], document: SegmentableDocument, pa
 const NUMERIC_ATOM_PATTERNS = [
   /\$\d[\d,]*(?:\.\d+)?\s+per\s+device\s+per\s+(?:month|year)/gi,
   /\$\d[\d,]*(?:\.\d+)?\s+per\s+device/gi,
+  /\$\d[\d,]*(?:\.\d+)?\s+per\s+(?:month|year)/gi,
   /(?:one-time\s+fee\s+of\s+)?\$\d[\d,]*(?:\.\d+)?/gi,
   /\d+(?:\.\d+)?%/g,
   /\d[\d,]*(?:\.\d+)?\s+(?:students?|devices?|months?|years?)/gi,

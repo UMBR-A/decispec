@@ -25,8 +25,8 @@ describe("POST /api/analyze", () => {
     const response = await handleAnalysisRequest(request(input));
     expect(response.status).toBe(503);
     await expect(response.json()).resolves.toEqual({
-      error: "Live analysis is not configured.",
-      code: "configuration",
+      error: "Live analysis needs a server-side OpenAI API key.",
+      code: "missing_api_key",
     });
   });
 
@@ -110,7 +110,7 @@ describe("POST /api/analyze", () => {
     expect(serialized).not.toContain("INVALID_OPERAND");
   });
 
-  it.each([["timeout", 504], ["schema_rejection", 502], ["validation_rejection", 502], ["rate_limit", 429], ["refusal", 422], ["configuration", 503]] as const)("maps %s errors to a safe status", async (code, status) => {
+  it.each([["timeout", 504], ["schema_rejection", 502], ["validation_rejection", 502], ["rate_limit", 429], ["refusal", 422], ["configuration", 503], ["missing_api_key", 503], ["unsupported_provider", 503], ["invalid_model", 503]] as const)("maps %s errors to a safe status", async (code, status) => {
     const provider: AnalysisProvider = { name: "Test provider", mode: "live-openai", async analyze() { throw new AnalysisProviderError(code, `Safe ${code} message.`); } };
     const response = await handleAnalysisRequest(request(input), provider);
     expect(response.status).toBe(status);

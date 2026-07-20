@@ -10,9 +10,13 @@ import { evaluateGraph } from "../../../lib/domain/engine";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
+const noStore = { "Cache-Control": "no-store" };
 
 const errorStatus: Record<AnalysisProviderError["code"], number> = {
   configuration: 503,
+  missing_api_key: 503,
+  unsupported_provider: 503,
+  invalid_model: 503,
   transport: 502,
   authentication: 503,
   quota: 503,
@@ -64,15 +68,28 @@ export async function handleAnalysisRequest(request: Request, provider?: Analysi
       return NextResponse.json({ error: "Provide valid source documents and a draft memo." }, { status: 400 });
     }
     if (error instanceof AnalysisProviderError) {
+      if (process.env.NODE_ENV !== "test") {
+        console.error("DECISPEC_LIVE_ANALYSIS_FAILURE", {
+          code: error.code,
+          responseReceived: error.responseReceived,
+          requestId: error.requestId,
+          latencyMs: error.latencyMs,
+          usage: error.usage,
+          stage: error.diagnostic?.stage,
+          validationCode: error.diagnostic?.code,
+          path: error.diagnostic?.path,
+          id: error.diagnostic?.id,
+        });
+      }
       if (error.code === "validation_rejection" && error.diagnostic) {
         return NextResponse.json({
           ...error.diagnostic,
           requestId: error.requestId,
           latencyMs: error.latencyMs,
           usage: error.usage,
-        }, { status: errorStatus[error.code], headers: { "Cache-Control": "no-store" } });
+        }, { status: errorStatus[error.code], headers: noStore });
       }
-      return NextResponse.json({ error: error.message, code: error.code }, { status: errorStatus[error.code] });
+      return NextResponse.json({ error: error.message, code: error.code }, { status: errorStatus[error.code], headers: noStore });
     }
     return NextResponse.json({ error: "Live analysis could not be completed." }, { status: 500 });
   }

@@ -26,6 +26,7 @@ export const UnitSchema = z.enum([
   "devices",
   "currency",
   "currency-per-device",
+  "currency-per-month",
   "currency-per-device-per-month",
   "month",
   "year",
@@ -84,7 +85,7 @@ export const CandidateSelectionCalculationSchema = z.object({
   candidates: z.array(z.object({
     label: z.string().min(1),
     valueNodeId: z.string().min(1),
-    maximumValueNodeId: z.string().min(1),
+    maximumValueNodeId: z.string().min(1).nullable(),
   })).min(2),
   selectionDirection: z.literal("minimum"),
   tieResult: z.string().nullable(),

@@ -93,7 +93,7 @@ See [the architecture document](docs/ARCHITECTURE.md) and [technical submission 
 - Returns a safe configuration error when `OPENAI_API_KEY` is absent.
 - Never substitutes the deterministic fixture when live analysis fails.
 
-The public deployment intentionally has no OpenAI key configured, so the deterministic demonstration is the judge-ready path and live mode reports that analysis is unavailable.
+Live mode exposes a content-safe preflight that confirms the server route, server-side key detection, selected model, and deterministic engine readiness without returning any credential material.
 
 ## Architecture and technology
 
@@ -122,7 +122,21 @@ npm run dev
 
 Open [http://localhost:3000](http://localhost:3000), then use **Instant demonstration**. No environment file is needed for that path.
 
-To develop the optional live provider locally, copy `.env.example` to `.env.local` and set `OPENAI_API_KEY` there. `.env.local` is ignored by Git. Never expose the key through a `NEXT_PUBLIC_` variable.
+To develop the optional live provider locally, copy `.env.example` to `.env.local` and set the server-side values below. `.env.local` is ignored by Git. Never expose the key through a `NEXT_PUBLIC_` or `VITE_` variable.
+
+```dotenv
+OPENAI_API_KEY=your-project-key
+OPENAI_PROVIDER=openai
+OPENAI_MODEL=gpt-5.6
+```
+
+Start the native Next.js development server when recording the live workflow so `.env.local` is loaded exactly as it is in the Vercel runtime:
+
+```bash
+npx next dev
+```
+
+Open `/workspace/live` and confirm that all four preflight checks pass before uploading evidence. The provider is called only after **Test decision** is pressed; configuration checks never make an OpenAI request. The recording profile uses low reasoning, zero automatic retries, and a 90-second server timeout.
 
 ## Scripts
 
@@ -173,7 +187,7 @@ The production site is deployed on Vercel from `main` at [https://decispec.verce
 - The calculation and unit vocabulary is deliberately narrow rather than a general-purpose programming language.
 - OCR, image understanding, spreadsheets, and scanned PDFs are not supported.
 - Evidence quality, document completeness, policy interpretation, and undeclared assumptions remain human responsibilities.
-- The public deployment does not currently configure live OpenAI analysis.
+- Hosted live analysis requires the same three server-side environment values and a redeployment. The deterministic demonstration remains independent of them.
 
 ## Roadmap
 

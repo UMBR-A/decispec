@@ -165,6 +165,17 @@ describe("strict provider proposal schema", () => {
     expectEveryObjectFieldRequired(format.schema);
   });
 
+  it("accepts a required nullable candidate ceiling without inventing policy", () => {
+    const proposal = fixtureProposal();
+    const selector = proposal.graph.nodes.find((node) => node.id === "recommendation")?.calculation;
+    if (selector?.operation !== "select-candidate") throw new Error("Expected selector.");
+    selector.candidates.forEach((candidate) => { candidate.maximumValueNodeId = null; });
+    const plan = validateProviderProposal(proposal, input);
+    const validated = plan.graph.nodes.find((node) => node.id === "recommendation")?.calculation;
+    expect(validated?.operation).toBe("select-candidate");
+    if (validated?.operation === "select-candidate") expect(validated.candidates.every((candidate) => candidate.maximumValueNodeId === null)).toBe(true);
+  });
+
   it("contains no provider quotation, page-label, section, or offset fields", () => {
     const schema = JSON.stringify((providerOutputFormat() as unknown as { schema: unknown }).schema);
     expect(schema).not.toMatch(/\"quote\"|\"pageLabel\"|\"section\"|\"start\"|\"end\"/);
@@ -529,6 +540,7 @@ describe("structured unit contract", () => {
     expect(recoverSourceNumbers("The quote states 36 months and a 36-month term.")).toContainEqual({ value: 36, unit: "month", role: "duration" });
     expect(recoverSourceNumbers("Support is $18 per device per month.")).toContainEqual({ value: 18, unit: "currency-per-device-per-month", role: "recurring-rate" });
     expect(recoverSourceNumbers("Support is $18/device/month.")).toContainEqual({ value: 18, unit: "currency-per-device-per-month", role: "recurring-rate" });
+    expect(recoverSourceNumbers("Support is $2,334 per month.")).toContainEqual({ value: 2334, unit: "currency-per-month", role: "recurring-rate" });
     expect(recoverSourceNumbers("Reserve 7% for 300 students and 321 devices.")).toEqual(expect.arrayContaining([
       { value: 7, unit: "percent", role: "percentage" },
       { value: 300, unit: "devices", role: "quantity" },
@@ -795,6 +807,8 @@ describe("OpenAI analysis provider safety", () => {
     expect(SYSTEM_INSTRUCTIONS).toContain("copy each byte-for-byte from candidates[].label");
     expect(SYSTEM_INSTRUCTIONS).toContain("never choose the authoritative winner");
     expect(request.model).toBe("gpt-5.6");
+    expect(request.reasoning.effort).toBe("low");
+    expect(request.store).toBe(false);
     expect(request).not.toHaveProperty("tools");
     const payload = JSON.parse(request.input[0].content[0].text) as { sourceSegments: Array<{ segmentId: string; documentId: string; content: string }> };
     expect(payload.sourceSegments.some((segment) => segment.documentId === "attack" && segment.content.includes("Ignore previous instructions"))).toBe(true);

@@ -71,7 +71,7 @@ export function calculationDependencyDescriptors(calculation: CalculationSpec | 
   if (calculation.operation === "select-candidate") {
     return [...new Map(calculation.candidates.flatMap((candidate) => [
       { nodeId: candidate.valueNodeId, kind: "calculation-input" as const },
-      { nodeId: candidate.maximumValueNodeId, kind: "policy" as const },
+      ...(candidate.maximumValueNodeId ? [{ nodeId: candidate.maximumValueNodeId, kind: "policy" as const }] : []),
     ]).map((descriptor) => [`${descriptor.kind}:${descriptor.nodeId}`, descriptor])).values()];
   }
   if (calculation.operation === "convert-duration") return [{ nodeId: calculation.inputNodeId, kind: "calculation-input" }];
@@ -184,6 +184,7 @@ const UNIT_DIMENSIONS: Record<Unit, UnitDimensions> = {
   devices: { currency: 0, devices: 1, time: 0, timeBasis: null, recommendation: false },
   currency: { currency: 1, devices: 0, time: 0, timeBasis: null, recommendation: false },
   "currency-per-device": { currency: 1, devices: -1, time: 0, timeBasis: null, recommendation: false },
+  "currency-per-month": { currency: 1, devices: 0, time: -1, timeBasis: "month", recommendation: false },
   "currency-per-device-per-month": { currency: 1, devices: -1, time: -1, timeBasis: "month", recommendation: false },
   month: { currency: 0, devices: 0, time: 1, timeBasis: "month", recommendation: false },
   year: { currency: 0, devices: 0, time: 1, timeBasis: "year", recommendation: false },
@@ -201,6 +202,7 @@ function canonicalUnitForDimensions(dimensions: UnitDimensions): Unit | null {
   if (dimensions.recommendation) return "recommendation";
   if (dimensions.currency === 1 && dimensions.devices === 0 && dimensions.time === 0) return "currency";
   if (dimensions.currency === 1 && dimensions.devices === -1 && dimensions.time === 0) return "currency-per-device";
+  if (dimensions.currency === 1 && dimensions.devices === 0 && dimensions.time === -1 && dimensions.timeBasis === "month") return "currency-per-month";
   if (dimensions.currency === 1 && dimensions.devices === -1 && dimensions.time === -1 && dimensions.timeBasis === "month") return "currency-per-device-per-month";
   if (dimensions.currency === 0 && dimensions.devices === 1 && dimensions.time === 0) return "devices";
   if (dimensions.currency === 0 && dimensions.devices === 0 && dimensions.time === 1 && dimensions.timeBasis === "month") return "month";
@@ -217,6 +219,7 @@ export function inferCalculationOutputUnit(calculation: CalculationSpec, nodeMap
   const knownUnits = units as Unit[];
   if (calculation.operation === "percentage-adjustment") return knownUnits[0];
   const dimensions = knownUnits.map(dimensionsForUnit);
+  if (calculation.operation === "divide" && calculation.outputUnit === "ratio" && dimensions.slice(1).every((dimension) => sameDimensions(dimension, dimensions[0]))) return "ratio";
   if (calculation.operation === "add" || calculation.operation === "subtract") {
     return dimensions.every((dimension) => sameDimensions(dimension, dimensions[0])) ? canonicalUnitForDimensions(dimensions[0]) : null;
   }
@@ -258,7 +261,7 @@ function arithmeticUnitMismatch(calc: Exclude<CalculationSpec, { operation: "sel
   }
   const timeBases = new Set(dimensions.filter((dimension) => dimension.time !== 0 && dimension.timeBasis).map((dimension) => dimension.timeBasis));
   if (timeBases.size > 1) {
-    const monthlyRateOperand = calc.operands.find((operand) => operandUnit(operand, nodeMap) === "currency-per-device-per-month");
+    const monthlyRateOperand = calc.operands.find((operand) => ["currency-per-month", "currency-per-device-per-month"].includes(operandUnit(operand, nodeMap) ?? ""));
     const yearlyDurationOperand = calc.operands.find((operand) => operandUnit(operand, nodeMap) === "year");
     const rateLabel = monthlyRateOperand?.kind === "ref" ? nodeMap.get(monthlyRateOperand.nodeId)?.label ?? "Monthly rate" : "Monthly rate";
     const durationValue = yearlyDurationOperand?.kind === "literal" ? yearlyDurationOperand.value : yearlyDurationOperand?.kind === "ref" ? nodeMap.get(yearlyDurationOperand.nodeId)?.value : undefined;
@@ -293,12 +296,14 @@ function unitMismatch(calc: CalculationSpec, nodeMap: Map<string, EvaluatedNode>
 export function evaluateCandidateSelection(calc: CandidateSelection, nodeMap: Map<string, EvaluatedNode>): CandidateSelectionOutcome {
   const eligible = calc.candidates.flatMap((candidate) => {
     const valueNode = nodeMap.get(candidate.valueNodeId);
-    const maximumNode = nodeMap.get(candidate.maximumValueNodeId);
-    if (!valueNode || !maximumNode) throw new CalculationContractError("UNDECLARED_DEPENDENCY");
-    if (typeof valueNode.value !== "number" || typeof maximumNode.value !== "number") {
+    const maximumNode = candidate.maximumValueNodeId ? nodeMap.get(candidate.maximumValueNodeId) : null;
+    const maximumValue = maximumNode?.value;
+    const numericMaximum = typeof maximumValue === "number" ? maximumValue : null;
+    if (!valueNode || (candidate.maximumValueNodeId && !maximumNode)) throw new CalculationContractError("UNDECLARED_DEPENDENCY");
+    if (typeof valueNode.value !== "number" || (maximumNode && typeof maximumValue !== "number")) {
       throw new CalculationContractError("INPUT_TYPE_MISMATCH");
     }
-    return valueNode.value <= maximumNode.value ? [{ label: candidate.label, value: valueNode.value }] : [];
+    return numericMaximum === null || valueNode.value <= numericMaximum ? [{ label: candidate.label, value: valueNode.value }] : [];
   });
   if (eligible.length === 0) return { value: "Unresolved", reason: "NONDETERMINISTIC_SELECTION" };
   const minimum = Math.min(...eligible.map((candidate) => candidate.value));

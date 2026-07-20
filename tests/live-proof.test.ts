@@ -83,7 +83,7 @@ function remapAndReorder(plan: ProviderAnalysisPlan): ProviderAnalysisPlan {
     ...node,
     id: ref(node.id),
     calculation: node.calculation?.operation === "select-candidate"
-      ? { ...node.calculation, candidates: node.calculation.candidates.toReversed().map((candidate) => ({ ...candidate, valueNodeId: ref(candidate.valueNodeId), maximumValueNodeId: ref(candidate.maximumValueNodeId) })) }
+      ? { ...node.calculation, candidates: node.calculation.candidates.toReversed().map((candidate) => ({ ...candidate, valueNodeId: ref(candidate.valueNodeId), maximumValueNodeId: candidate.maximumValueNodeId ? ref(candidate.maximumValueNodeId) : null })) }
       : node.calculation?.operation === "convert-duration" ? { ...node.calculation, inputNodeId: ref(node.calculation.inputNodeId) }
       : node.calculation ? { ...node.calculation, operands: node.calculation.operands.map((operand) => operand.kind === "ref" ? { ...operand, nodeId: ref(operand.nodeId) } : operand) }
       : null,
