@@ -73,6 +73,14 @@ See [the architecture document](docs/ARCHITECTURE.md) and [technical submission 
 - **Deployment:** Vercel-native Next.js production build
 - **Alternate build:** Vinext/Vite with Cloudflare-compatible output
 
+## How Codex and GPT-5.6 were used
+
+Decispec was developed with roughly five dollars of API credit. Codex served as an engineering collaborator across architecture, strict schemas, the deterministic proof engine, provider validation, UI implementation, regression tests, browser automation, debugging, and deployment preparation.
+
+GPT-5.6 has a deliberately narrow runtime role. After the user explicitly selects **Test decision**, it proposes a structured representation of the submitted documents: source references, claims, calculations, dependencies, assumptions, corrections, and recommendation candidates. It does not authoritatively decide what is supported, broken, corrected, or recommended.
+
+All source binding, numeric and unit validation, calculation execution, dependency propagation, correction materialization, integrity checks, and final candidate selection run in deterministic local code. This separation made limited API credit practical while keeping the result repeatable and testable.
+
 ## Local setup
 
 Requires Node.js 22.13 or newer.
