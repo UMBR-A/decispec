@@ -18,7 +18,7 @@ flowchart TD
   E --> R["Report + evaluated JSON export"]
 ```
 
-The bundled demonstration enters at the deterministic engine with a synthetic, schema-validated fixture. It does not call the provider. Optional live mode enters through server extraction and the provider boundary, then must pass every local validation stage before execution.
+The live workflow enters through server extraction and the provider boundary, then must pass every local validation stage before deterministic execution.
 
 ## Proof DAG
 
@@ -65,7 +65,7 @@ The provider sets the recommendation value to `null`. Local code evaluates eligi
 
 ## Dependency propagation
 
-The engine evaluates a node only after its dependencies. A unit mismatch may still retain the arithmetic value for inspection, but the node status becomes broken. Any downstream node whose conclusion depends on that broken node also becomes broken. The demo’s path is:
+The engine evaluates a node only after its dependencies. A unit mismatch may still retain the arithmetic value for inspection, but the node status becomes broken. Any downstream node whose conclusion depends on that broken node also becomes broken. A failing path is presented from the source-bound rate through the calculation and candidate total to the recommendation.
 
 ```text
 Vendor A monthly support rate
@@ -87,11 +87,11 @@ A correction identifies a target calculation and a replacement structured operat
 5. verify that no cycle was introduced; and
 6. reevaluate the graph.
 
-In the demonstration, the replacement operation uses the quote’s explicit 36-month term. Evidence is unchanged. The corrected graph produces `$208,008` support, `$268,677` for Vendor A, `$85,929` for Vendor B, and a Vendor B recommendation.
+When a correction replaces an incompatible duration with a source-bound monthly duration, evidence remains unchanged and the graph recomputes all dependent values and the recommendation.
 
 ## Semantic differences, replay, and undo
 
-The semantic diff compares evaluated nodes by value and status. The UI presents only the material changes in the demo: Vendor A support, Vendor A total, and recommendation. Undo restores a cloned original graph; replay reruns the failure path and focused animation.
+The semantic diff compares evaluated nodes by value and status. The UI presents only material changes. Undo restores the original evaluated graph and the failure view remains traceable.
 
 Captured provider replays exercise the same validation and engine pipeline without a paid request. Replay tests locate nodes and corrections through typed semantics rather than provider-generated IDs, array positions, or candidate ordering. Randomized IDs and orderings protect that contract.
 
@@ -147,7 +147,7 @@ The repository includes 125 active unit, component, route, provider, replay, exp
 
 ## Deployment architecture
 
-The production application is a native Next.js build deployed from `main` to Vercel at https://decispec.vercel.app. `vercel.json` pins the Next.js framework and `npm run build:vercel`. Canonical and social metadata resolve to the public production host. No user-supplied environment variable is required for the deterministic demonstration.
+The production application is a native Next.js build deployed from `main` to Vercel at https://decispec.vercel.app. `vercel.json` pins the Next.js framework and `npm run build:vercel`. Canonical and social metadata resolve to the public production host. Live analysis requires server-side provider configuration.
 
 The repository also retains a Vinext/Vite/Cloudflare-compatible build path. No D1 database or R2 bucket is configured for this product state.
 
@@ -156,7 +156,7 @@ The repository also retains a Vinext/Vite/Cloudflare-compatible build path. No D
 - The OpenAI key, when used locally, is server-only and ignored by Git.
 - No `NEXT_PUBLIC_` secret path exists.
 - Evidence is untrusted data, never executable instruction.
-- Live failures do not fall back to demo output.
+- Live failures do not fall back to fabricated evaluated output.
 - Client diagnostics exclude sensitive content.
 - No provider response is returned before local validation and deterministic execution.
 - The deployed client exposes no source maps containing source or secrets.

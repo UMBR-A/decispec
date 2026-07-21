@@ -1,15 +1,15 @@
 import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { LiveAnalysisWorkspace } from "../components/LiveAnalysisWorkspace";
-import { demoProject, demoSourceSpanIds } from "../lib/demo/fixture";
+import { proofEngineProject, proofEngineSourceSpanIds } from "./fixtures/proof-engine-project";
 import { evaluateGraph, resetGraph } from "../lib/domain/engine";
 
 afterEach(() => { cleanup(); vi.restoreAllMocks(); });
 
 describe("live analysis workspace", () => {
   it("calls live analysis only after explicit action and renders engine-derived results", async () => {
-    const graph = resetGraph(demoProject.graph);
-    const evaluation = evaluateGraph(graph, demoSourceSpanIds);
+    const graph = resetGraph(proofEngineProject.graph);
+    const evaluation = evaluateGraph(graph, proofEngineSourceSpanIds);
     const fetchMock = vi.spyOn(globalThis, "fetch").mockImplementation(async (input) => String(input).endsWith("/status")
       ? new Response(JSON.stringify({ routeAvailable: true, provider: "openai", providerConfigured: true, apiKeyDetected: true, model: "gpt-5.6", modelPresent: true, engineReady: true, ready: true, code: "ready" }), { status: 200, headers: { "Content-Type": "application/json" } })
       : new Response(JSON.stringify({
@@ -17,7 +17,7 @@ describe("live analysis workspace", () => {
       usage: { inputTokens: 100, outputTokens: 200, totalTokens: 300 },
       requestId: "req_mock",
       latencyMs: 1000,
-      analysis: { sourceSpans: demoProject.sourceSpans, graph },
+      analysis: { sourceSpans: proofEngineProject.sourceSpans, graph },
       evaluation,
     }), { status: 200, headers: { "Content-Type": "application/json" } }));
     render(<LiveAnalysisWorkspace />);
@@ -33,7 +33,7 @@ describe("live analysis workspace", () => {
     expect(String(request.body)).not.toMatch(/OPENAI_API_KEY|sk-proj/i);
   });
 
-  it("shows a safe error and never substitutes the demo", async () => {
+  it("shows a safe error and never substitutes unverified output", async () => {
     vi.spyOn(globalThis, "fetch").mockImplementation(async (input) => String(input).endsWith("/status")
       ? new Response(JSON.stringify({ routeAvailable: true, provider: "openai", providerConfigured: true, apiKeyDetected: true, model: "gpt-5.6", modelPresent: true, engineReady: true, ready: true, code: "ready" }), { status: 200, headers: { "Content-Type": "application/json" } })
       : new Response(JSON.stringify({ error: "Analysis could not be completed.", code: "timeout" }), { status: 504, headers: { "Content-Type": "application/json" } }));
@@ -46,11 +46,11 @@ describe("live analysis workspace", () => {
   });
 
   it("previews, applies, undoes, and reports deterministic live corrections", async () => {
-    const graph = resetGraph(demoProject.graph);
-    const evaluation = evaluateGraph(graph, demoSourceSpanIds);
+    const graph = resetGraph(proofEngineProject.graph);
+    const evaluation = evaluateGraph(graph, proofEngineSourceSpanIds);
     vi.spyOn(globalThis, "fetch").mockImplementation(async (input) => String(input).endsWith("/status")
       ? new Response(JSON.stringify({ routeAvailable: true, provider: "openai", providerConfigured: true, apiKeyDetected: true, model: "gpt-5.6", modelPresent: true, engineReady: true, ready: true, code: "ready" }), { status: 200, headers: { "Content-Type": "application/json" } })
-      : new Response(JSON.stringify({ provider: { name: "OpenAI", mode: "live-openai", model: "gpt-5.6" }, usage: null, requestId: "req_mock", latencyMs: 10, analysis: { sourceSpans: demoProject.sourceSpans, graph }, evaluation }), { status: 200, headers: { "Content-Type": "application/json" } }));
+      : new Response(JSON.stringify({ provider: { name: "OpenAI", mode: "live-openai", model: "gpt-5.6" }, usage: null, requestId: "req_mock", latencyMs: 10, analysis: { sourceSpans: proofEngineProject.sourceSpans, graph }, evaluation }), { status: 200, headers: { "Content-Type": "application/json" } }));
     render(<LiveAnalysisWorkspace />);
     fireEvent.change(screen.getByPlaceholderText(/recommendation you want to test/i), { target: { value: "Select Vendor A." } });
     fireEvent.change(screen.getByPlaceholderText(/Paste evidence text/i), { target: { value: "Evidence passage." } });

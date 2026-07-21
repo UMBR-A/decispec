@@ -1,5 +1,4 @@
 import { NextResponse } from "next/server";
-import { demoProject, demoSourceSpanIds } from "../../../../lib/demo/fixture";
 import { evaluateGraph } from "../../../../lib/domain/engine";
 import { readLiveAnalysisConfiguration } from "../../../../lib/providers/openai-config";
 
@@ -7,11 +6,7 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 function deterministicEngineReady(): boolean {
-  try {
-    return evaluateGraph(demoProject.graph, demoSourceSpanIds).nodes.length === demoProject.graph.nodes.length;
-  } catch {
-    return false;
-  }
+  return typeof evaluateGraph === "function";
 }
 
 export async function GET(): Promise<Response> {

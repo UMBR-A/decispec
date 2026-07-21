@@ -10,9 +10,9 @@
 
 ## Public artifact
 
-- [ ] Record a public video with audio under three minutes using `docs/DEMO_SCRIPT.md`.
+- [ ] Record a public video with audio under three minutes using the production live-analysis workflow.
 - [ ] Verify no desktop chrome, development overlay, Codex overlay, secret, or private document appears.
-- [ ] Select the clean `decispec-*.png` desktop and mobile screenshots from `docs/qa/`.
+- [ ] Capture clean desktop and mobile screenshots from the current production workflow.
 - [ ] Verify the final public URL on desktop and mobile.
 - [ ] Check the competition deadline and timezone immediately before submission.
 
@@ -29,4 +29,4 @@
 - [ ] `npm run verify`
 - [ ] `npm run test:e2e`
 - [ ] Re-run secret/key-pattern audit and production dependency audit.
-- [ ] Verify deterministic demo, focused/full graph, correction/undo/replay, report, JSON export, TXT upload, PDF upload, keyboard focus, reduced motion, and 1440×900 / 390×844 layouts.
+- [ ] Verify upload, analysis, focused/full graph, correction/undo, report, JSON export, keyboard focus, reduced motion, and 1440×900 / 390×844 layouts.

@@ -6,8 +6,8 @@ import path from "node:path";
 import OpenAI from "openai";
 import { describe, expect, it } from "vitest";
 import { loadEnv } from "vite";
-import { AnalysisProviderError, ProviderAnalysisPlanSchema, demoAnalysisInput, validateProviderProposal, type AnalysisUsage } from "../lib/providers/analysis-provider";
-import { DEMO_PROJECT_ID } from "../lib/demo/fixture";
+import { AnalysisProviderError, ProviderAnalysisPlanSchema, validateProviderProposal, type AnalysisUsage } from "../lib/providers/analysis-provider";
+import { PROOF_ENGINE_PROJECT_ID, proofEngineAnalysisInput } from "./fixtures/proof-engine-project";
 import { executeLiveProof } from "../lib/providers/live-proof";
 import { SafeValidationError } from "../lib/providers/safe-validation";
 import {
@@ -57,7 +57,7 @@ async function writeIgnoredReplay(redacted: unknown, metadata: Omit<CapturedResp
   const absolutePath = path.resolve(replayRelativePath);
   execFileSync("git", ["check-ignore", "--quiet", "--", replayRelativePath], { stdio: "ignore" });
   await mkdir(path.dirname(absolutePath), { recursive: true });
-  await writeFile(absolutePath, `${JSON.stringify({ fixtureId: DEMO_PROJECT_ID, safeMetadata: metadata, structuredOutput: redacted }, null, 2)}\n`, { encoding: "utf8", flag: "wx" });
+  await writeFile(absolutePath, `${JSON.stringify({ fixtureId: PROOF_ENGINE_PROJECT_ID, safeMetadata: metadata, structuredOutput: redacted }, null, 2)}\n`, { encoding: "utf8", flag: "wx" });
   return replayRelativePath;
 }
 
@@ -76,7 +76,7 @@ function countSchemaProperties(value: unknown): number {
 
 describe("GPT-5.6 Terra bundled evidence smoke test", () => {
   it("reports safe aggregate request metadata", () => {
-    const input = demoAnalysisInput();
+    const input = proofEngineAnalysisInput();
     const request = buildProviderRequest(input, smokeOptions);
     const requestTextCharacters = request.input[0].content[0].text.length;
     const safeMetadata = {
@@ -106,8 +106,8 @@ describe("GPT-5.6 Terra bundled evidence smoke test", () => {
     const env = loadEnv("development", process.cwd(), "");
     if (!env.OPENAI_API_KEY) throw new Error("OPENAI_API_KEY is unavailable for the live smoke test.");
     process.env.OPENAI_API_KEY = env.OPENAI_API_KEY;
-    const input = demoAnalysisInput();
-    if (input.fixtureId !== DEMO_PROJECT_ID) throw new Error("Live acceptance capture is restricted to the bundled synthetic fixture.");
+    const input = proofEngineAnalysisInput();
+    if (input.fixtureId !== PROOF_ENGINE_PROJECT_ID) throw new Error("Live acceptance capture is restricted to the bundled synthetic fixture.");
     const captureEnabled = process.env.ASSERT_CAPTURE_SYNTHETIC_REPLAY === "1";
     let capturedResponse: CapturedResponse | null = null;
 

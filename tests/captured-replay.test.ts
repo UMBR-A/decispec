@@ -5,8 +5,8 @@ import { execFileSync } from "node:child_process";
 import { existsSync, readFileSync } from "node:fs";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
+import { proofEngineAnalysisInput } from "./fixtures/proof-engine-project";
 import {
-  demoAnalysisInput,
   validateProviderProposal,
   type AnalysisResult,
   type ProviderAnalysisPlan,
@@ -44,7 +44,7 @@ function sha256(value: string): string {
 }
 
 function migrateLegacyReplay(artifact: ReplayArtifact): ReplayArtifact {
-  const input = demoAnalysisInput();
+  const input = proofEngineAnalysisInput();
   const hydrated = structuredClone(artifact.structuredOutput);
   if (!hydrated.sourceSpans) return { ...artifact, structuredOutput: hydrated };
   const registry = buildSourceSegmentRegistry(input);
@@ -99,7 +99,7 @@ function loadReplay(relativePath: string): ReplayArtifact {
 
 function validateReplay(artifact: ReplayArtifact) {
   try {
-    return validateProviderProposal(artifact.structuredOutput, demoAnalysisInput());
+    return validateProviderProposal(artifact.structuredOutput, proofEngineAnalysisInput());
   } catch (error) {
     if (error instanceof SafeValidationError) throw new Error(`Replay failed safely at ${error.diagnostic.stage}:${error.diagnostic.code}:${error.diagnostic.path}`);
     throw error;
@@ -279,7 +279,7 @@ function assertReplayContentSafe(artifact: ReplayArtifact, proseMode: "redacted"
   const forbiddenKeys = new Set(["quote", "sourceSpans", "pageLabel", "section", "start", "end", "content", "prompt", "instructions", "authorization", "apiKey", "error"]);
   expect(keys.some((key) => forbiddenKeys.has(key))).toBe(false);
   expect(strings.join("\n")).not.toMatch(/sk-proj-|OPENAI_API_KEY|raw provider|system prompt|authorization/i);
-  const sourceSegments = buildSourceSegmentRegistry(demoAnalysisInput()).segments.filter((segment) => segment.content.length >= 20);
+  const sourceSegments = buildSourceSegmentRegistry(proofEngineAnalysisInput()).segments.filter((segment) => segment.content.length >= 20);
   expect(sourceSegments.some((segment) => strings.some((value) => value.includes(segment.content)))).toBe(false);
   const proposal = artifact.structuredOutput as unknown as ProviderAnalysisPlan;
   for (const node of proposal.graph.nodes) {

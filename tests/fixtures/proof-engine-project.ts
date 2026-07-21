@@ -1,12 +1,12 @@
-import { DecisionProjectSchema, type DecisionProject } from "../domain/schemas";
+import { DecisionProjectSchema, type DecisionProject } from "../../lib/domain/schemas";
+import type { AnalysisInput } from "../../lib/providers/analysis-provider";
 
-export const DEMO_PROJECT_ID = "assert-school-device-2026";
+export const PROOF_ENGINE_PROJECT_ID = "proof-engine-school-device";
 
-export const demoProject: DecisionProject = DecisionProjectSchema.parse({
-  id: DEMO_PROJECT_ID,
+export const proofEngineProject: DecisionProject = DecisionProjectSchema.parse({
+  id: PROOF_ENGINE_PROJECT_ID,
   title: "Three-year student device purchase",
   question: "Which vendor should Northfield School select for 321 student devices?",
-  mode: "deterministic-demo",
   documents: [
     {
       id: "policy",
@@ -120,4 +120,30 @@ export const demoProject: DecisionProject = DecisionProjectSchema.parse({
   },
 });
 
-export const demoSourceSpanIds = new Set(demoProject.sourceSpans.map((span) => span.id));
+export const proofEngineSourceSpanIds = new Set(proofEngineProject.sourceSpans.map((span) => span.id));
+
+function joinSections(sections: Array<{ heading: string; body: string }>, includeHeadings: boolean) {
+  const separator = includeHeadings ? "\n\n" : "\n";
+  let content = "";
+  const metadata: Array<{ heading: string; start: number; end: number }> = [];
+  for (const section of sections) {
+    if (content) content += separator;
+    const start = content.length;
+    content += includeHeadings ? `${section.heading}\n${section.body}` : section.body;
+    metadata.push({ heading: section.heading, start, end: content.length });
+  }
+  return { content, sections: metadata };
+}
+
+export function proofEngineAnalysisInput(): AnalysisInput {
+  const draft = joinSections(proofEngineProject.draftMemo.sections, true);
+  return {
+    fixtureId: PROOF_ENGINE_PROJECT_ID,
+    documents: proofEngineProject.documents.map((document) => {
+      const joined = joinSections(document.sections, false);
+      return { id: document.id, title: document.title, content: joined.content, pageLabel: document.pageLabel, sections: joined.sections };
+    }),
+    draftMemo: draft.content,
+    draftMemoMetadata: { documentId: "draft-memo", title: proofEngineProject.draftMemo.title, pageLabel: "Draft memo · p. 1", sections: draft.sections },
+  };
+}

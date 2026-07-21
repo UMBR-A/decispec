@@ -7,7 +7,6 @@ import {
   type CalculationSpec,
   type Unit,
 } from "../domain/schemas";
-import { DEMO_PROJECT_ID, demoProject } from "../demo/fixture";
 import { inferCalculationOutputUnit } from "../domain/engine";
 import { recoverSourceFact, type SourceNumericRole } from "./source-unit-recovery";
 import {
@@ -169,7 +168,7 @@ export type NormalizedDocument = z.infer<typeof NormalizedDocumentSchema>;
 export type AnalysisInput = z.infer<typeof AnalysisInputSchema>;
 export type ProviderAnalysisPlan = z.infer<typeof ProviderAnalysisPlanSchema>;
 export type AnalysisPlan = z.infer<typeof AnalysisPlanSchema>;
-export type ProviderMode = "deterministic-demo" | "live-openai";
+export type ProviderMode = "live-openai";
 export type AnalysisUsage = { inputTokens: number | null; outputTokens: number | null; totalTokens: number | null };
 export type AnalysisResult = {
   plan: AnalysisPlan;
@@ -721,47 +720,5 @@ export function validateProviderProposal(rawProposal: unknown, rawInput: Analysi
     if (error instanceof z.ZodError) failValidation(safeSchemaDiagnostic(error));
     if (error instanceof SafeValidationError) throw error;
     throw error;
-  }
-}
-
-function joinSections(sections: Array<{ heading: string; body: string }>, includeHeadings: boolean) {
-  const separator = includeHeadings ? "\n\n" : "\n";
-  let content = "";
-  const metadata: Array<{ heading: string; start: number; end: number }> = [];
-  for (const section of sections) {
-    if (content) content += separator;
-    const start = content.length;
-    content += includeHeadings ? `${section.heading}\n${section.body}` : section.body;
-    metadata.push({ heading: section.heading, start, end: content.length });
-  }
-  return { content, sections: metadata };
-}
-
-export function demoAnalysisInput(): AnalysisInput {
-  const draft = joinSections(demoProject.draftMemo.sections, true);
-  return {
-    fixtureId: DEMO_PROJECT_ID,
-    documents: demoProject.documents.map((document) => {
-      const joined = joinSections(document.sections, false);
-      return { id: document.id, title: document.title, content: joined.content, pageLabel: document.pageLabel, sections: joined.sections };
-    }),
-    draftMemo: draft.content,
-    draftMemoMetadata: { documentId: "draft-memo", title: demoProject.draftMemo.title, pageLabel: "Draft memo · p. 1", sections: draft.sections },
-  };
-}
-
-export class DemoAnalysisProvider implements AnalysisProvider {
-  readonly name = "Deterministic demo";
-  readonly mode = "deterministic-demo" as const;
-
-  async analyze(input: AnalysisInput): Promise<AnalysisResult> {
-    if (input.fixtureId !== DEMO_PROJECT_ID) throw new Error("Offline demo analysis is available only for the bundled ASSERT fixture.");
-    return {
-      plan: AnalysisPlanSchema.parse({ sourceSpans: structuredClone(demoProject.sourceSpans), graph: structuredClone(demoProject.graph) }),
-      provider: { name: this.name, mode: this.mode, model: null },
-      usage: null,
-      requestId: null,
-      latencyMs: null,
-    };
   }
 }

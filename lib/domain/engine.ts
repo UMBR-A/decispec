@@ -524,7 +524,7 @@ export function buildProofReport(
   return ProofReportSchema.parse({
     projectId,
     generatedAt: options.generatedAt ?? new Date().toISOString(),
-    mode: options.mode ?? "deterministic-demo",
+    mode: options.mode ?? "live-openai",
     phase: options.phase,
     recommendation: String(recommendation?.value ?? "Unresolved"),
     recommendationState,
@@ -593,7 +593,7 @@ export function buildProofExport(
     schemaVersion: "1.0",
     projectId,
     generatedAt,
-    mode: options.mode ?? "deterministic-demo",
+    mode: options.mode ?? "live-openai",
     phase: options.phase,
     graph: materializeEvaluatedGraph(graph, effectiveResult),
     report: buildProofReport(projectId, result, original, spans, { ...options, generatedAt }),

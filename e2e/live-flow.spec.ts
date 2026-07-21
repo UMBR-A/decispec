@@ -93,7 +93,7 @@ test("keyboard navigation and reduced motion remain usable", async ({ page }) =>
   await page.keyboard.press("Tab");
   const primaryActionFocused = await page.evaluate(() => ({ tag: document.activeElement?.tagName, text: document.activeElement?.textContent?.trim() }));
   expect(primaryActionFocused.tag).toBe("A");
-  expect(primaryActionFocused.text).toContain("Instant demonstration");
-  const duration = await page.getByRole("link", { name: "Instant demonstration" }).evaluate((element) => getComputedStyle(element).transitionDuration);
+  expect(primaryActionFocused.text).toContain("Analyze my decision");
+  const duration = await page.getByRole("link", { name: "Analyze my decision" }).evaluate((element) => getComputedStyle(element).transitionDuration);
   expect(Number.parseFloat(duration)).toBeLessThanOrEqual(0.01);
 });

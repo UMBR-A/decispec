@@ -1,6 +1,6 @@
 # Phase 2 live analysis provider boundary
 
-The live provider is implemented behind a strict server-only boundary. It remains separate from the bundled deterministic demonstration and is invoked only after explicit user action.
+The live provider is implemented behind a strict server-only boundary and is invoked only after explicit user action.
 
 The live provider:
 
@@ -24,4 +24,4 @@ OPENAI_PROVIDER=openai
 OPENAI_MODEL=gpt-5.6
 ```
 
-`GET /api/analyze/status` returns only readiness booleans plus provider/model names. It never returns, logs, hashes, or partially reveals the key. Missing keys, unsupported providers, invalid model names, authentication, quota, rate limits, timeouts, transport failures, refusals, schema rejections, and local validation rejections use distinct safe codes. Live failures never substitute the deterministic fixture.
+`GET /api/analyze/status` returns only readiness booleans plus provider/model names. It never returns, logs, hashes, or partially reveals the key. Missing keys, unsupported providers, invalid model names, authentication, quota, rate limits, timeouts, transport failures, refusals, schema rejections, and local validation rejections use distinct safe codes. Failed analysis never substitutes fabricated evaluated state.

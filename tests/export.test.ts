@@ -1,18 +1,18 @@
 import { describe, expect, it } from "vitest";
 import { applyCorrection, buildProofExport, evaluateGraph } from "../lib/domain/engine";
-import { demoProject, demoSourceSpanIds } from "../lib/demo/fixture";
+import { proofEngineProject, proofEngineSourceSpanIds } from "./fixtures/proof-engine-project";
 import type { ClaimStatus, ProofExport, ProofPhase } from "../lib/domain/schemas";
 
 const GENERATED_AT = "2026-07-17T12:00:00.000Z";
 const statuses: ClaimStatus[] = ["supported", "calculated", "assumed", "contradicted", "stale", "broken", "pending"];
-const original = evaluateGraph(demoProject.graph, demoSourceSpanIds);
+const original = evaluateGraph(proofEngineProject.graph, proofEngineSourceSpanIds);
 
 function exportAt(phase: ProofPhase): ProofExport {
   const graph = phase === "corrected"
-    ? applyCorrection(demoProject.graph, demoProject.graph.corrections[0])
-    : demoProject.graph;
-  const result = phase === "corrected" ? evaluateGraph(graph, demoSourceSpanIds) : original;
-  return buildProofExport(demoProject.id, graph, result, original, demoProject.sourceSpans, { phase, generatedAt: GENERATED_AT });
+    ? applyCorrection(proofEngineProject.graph, proofEngineProject.graph.corrections[0])
+    : proofEngineProject.graph;
+  const result = phase === "corrected" ? evaluateGraph(graph, proofEngineSourceSpanIds) : original;
+  return buildProofExport(proofEngineProject.id, graph, result, original, proofEngineProject.sourceSpans, { phase, generatedAt: GENERATED_AT });
 }
 
 function expectGraphAndReportToAgree(proof: ProofExport) {

@@ -1,9 +1,8 @@
 import { describe, expect, it } from "vitest";
-import { demoProject } from "../lib/demo/fixture";
+import { proofEngineAnalysisInput, proofEngineProject } from "./fixtures/proof-engine-project";
 import { applyCorrection, evaluateCandidateSelection, evaluateGraph, type EvaluatedNode } from "../lib/domain/engine";
 import {
   AnalysisProviderError,
-  demoAnalysisInput,
   extractNormalizedNumbers,
   extractSourceNumericValues,
   validateProviderProposal,
@@ -20,12 +19,12 @@ import {
 } from "../lib/providers/openai-analysis-provider";
 import { buildSourceSegmentRegistry, type SourceSegment } from "../lib/providers/source-segments";
 
-const input = demoAnalysisInput();
+const input = proofEngineAnalysisInput();
 
-type DemoCalculation = NonNullable<(typeof demoProject.graph.nodes)[number]["calculation"]>;
-type DemoArithmeticCalculation = Exclude<DemoCalculation, { operation: "select-candidate" | "convert-duration" }>;
+type RegressionCalculation = NonNullable<(typeof proofEngineProject.graph.nodes)[number]["calculation"]>;
+type RegressionArithmeticCalculation = Exclude<RegressionCalculation, { operation: "select-candidate" | "convert-duration" }>;
 
-function providerCalculation(calculation: DemoArithmeticCalculation) {
+function providerCalculation(calculation: RegressionArithmeticCalculation) {
   return {
     ...structuredClone(calculation),
     operands: calculation.operands.map((operand) => operand.kind === "ref"
@@ -64,9 +63,9 @@ function segmentForSpan(documentId: string, quote: string, emphasis: string | nu
 }
 
 function fixtureSourceBindings() {
-  return demoProject.sourceSpans.map((span) => {
+  return proofEngineProject.sourceSpans.map((span) => {
     const segment = segmentForSpan(span.documentId, span.quote, span.emphasis);
-    const kind = demoProject.documents.find((document) => document.id === span.documentId)?.kind;
+    const kind = proofEngineProject.documents.find((document) => document.id === span.documentId)?.kind;
     return {
       bindingId: span.id,
       documentId: span.documentId,
@@ -77,7 +76,7 @@ function fixtureSourceBindings() {
   });
 }
 
-function addBindingForText(proposal: ProviderAnalysisPlan, analysisInput: ReturnType<typeof demoAnalysisInput>, bindingId: string, documentId: string, text: string, semanticRole: "fact" | "policy" | "recommendation" | "context" = "fact") {
+function addBindingForText(proposal: ProviderAnalysisPlan, analysisInput: ReturnType<typeof proofEngineAnalysisInput>, bindingId: string, documentId: string, text: string, semanticRole: "fact" | "policy" | "recommendation" | "context" = "fact") {
   const registry = buildSourceSegmentRegistry(analysisInput);
   const segment = registry.segments.filter((candidate) => candidate.documentId === documentId && candidate.content === text).sort((a, b) => a.type === "numeric-evidence" ? -1 : b.type === "numeric-evidence" ? 1 : 0)[0];
   if (!segment) throw new Error(`No exact segment for ${bindingId}.`);
@@ -89,8 +88,8 @@ function fixtureProposal(): ProviderAnalysisPlan {
   return {
     sourceBindings: fixtureSourceBindings(),
     graph: {
-      id: demoProject.graph.id,
-      nodes: demoProject.graph.nodes.map((node) => ({
+      id: proofEngineProject.graph.id,
+      nodes: proofEngineProject.graph.nodes.map((node) => ({
         id: node.id,
         label: node.label,
         statement: node.statement,
@@ -101,13 +100,13 @@ function fixtureProposal(): ProviderAnalysisPlan {
         sourceSpanIds: [...node.sourceSpanIds],
         calculation: node.id === "recommendation"
           ? providerRecommendationCalculation()
-          : node.calculation ? providerCalculation(node.calculation as DemoArithmeticCalculation) : null,
+          : node.calculation ? providerCalculation(node.calculation as RegressionArithmeticCalculation) : null,
       })),
-      edges: demoProject.graph.edges.map((edge) => ({ ...edge, kind: edge.kind === "untyped" ? null : edge.kind, label: edge.label ?? null })),
-      recommendation: structuredClone(demoProject.graph.recommendation),
-      corrections: demoProject.graph.corrections.map((correction) => ({
+      edges: proofEngineProject.graph.edges.map((edge) => ({ ...edge, kind: edge.kind === "untyped" ? null : edge.kind, label: edge.label ?? null })),
+      recommendation: structuredClone(proofEngineProject.graph.recommendation),
+      corrections: proofEngineProject.graph.corrections.map((correction) => ({
         ...structuredClone(correction),
-        replacementCalculation: providerCalculation(correction.replacementCalculation as DemoArithmeticCalculation),
+        replacementCalculation: providerCalculation(correction.replacementCalculation as RegressionArithmeticCalculation),
       })),
     },
   };
@@ -726,8 +725,8 @@ describe("deterministic recommendation calculation contract", () => {
   });
 
   it("leaves the offline fixture recommendation contract unchanged", () => {
-    expect(demoProject.graph.nodes.find((node) => node.id === "recommendation")?.calculation?.operation).toBe("compare-lower");
-    const corrected = evaluateGraph(applyCorrection(demoProject.graph, demoProject.graph.corrections[0]), new Set(demoProject.sourceSpans.map((span) => span.id)));
+    expect(proofEngineProject.graph.nodes.find((node) => node.id === "recommendation")?.calculation?.operation).toBe("compare-lower");
+    const corrected = evaluateGraph(applyCorrection(proofEngineProject.graph, proofEngineProject.graph.corrections[0]), new Set(proofEngineProject.sourceSpans.map((span) => span.id)));
     expect(corrected.nodes.find((node) => node.id === "recommendation")?.value).toBe("Vendor B");
   });
 });

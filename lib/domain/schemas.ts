@@ -168,7 +168,6 @@ export const DecisionProjectSchema = z.object({
   id: z.string(),
   title: z.string(),
   question: z.string(),
-  mode: z.literal("deterministic-demo"),
   documents: z.array(SourceDocumentSchema),
   sourceSpans: z.array(SourceSpanSchema),
   draftMemo: z.object({
@@ -179,7 +178,7 @@ export const DecisionProjectSchema = z.object({
 });
 
 export const ProofPhaseSchema = z.enum(["not-verified", "verified", "corrected"]);
-export const ProofModeSchema = z.enum(["deterministic-demo", "live-openai"]);
+export const ProofModeSchema = z.literal("live-openai");
 export const RecommendationStateSchema = z.enum(["not-verified", "valid", "broken", "corrected"]);
 
 export const ProofReportSchema = z.object({

@@ -12,7 +12,6 @@ describe("product presentation and accessibility", () => {
     expect(screen.getByText("Source evidence")).toBeInTheDocument();
     expect(screen.getByText("AI-written recommendation")).toBeInTheDocument();
     expect(screen.getByText(/binds each claim to exact source text/i)).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: /Instant demonstration/i })).toHaveAttribute("href", "/workspace/demo");
     expect(screen.getByRole("link", { name: /Analyze my decision/i })).toHaveAttribute("href", "/workspace/live");
   });
 

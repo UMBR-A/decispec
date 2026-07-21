@@ -1,6 +1,6 @@
 # Decispec Judging Notes
 
-Live demo: https://decispec.vercel.app
+Live application: https://decispec.vercel.app
 
 Repository: https://github.com/UMBR-A/decispec
 
@@ -10,11 +10,11 @@ AI-written recommendations often compress evidence, arithmetic, assumptions, pol
 
 ## Who would use it?
 
-Teams reviewing consequential recommendations: procurement, finance, operations, policy, compliance, technical governance, and consultants preparing decisions for approval. The current demonstration is procurement-focused, but the underlying proof model is domain-independent within its typed operation vocabulary.
+Teams reviewing consequential recommendations: procurement, finance, operations, policy, compliance, technical governance, and consultants preparing decisions for approval. The proof model is domain-independent within its typed operation vocabulary.
 
 ## Why is this more than a chatbot wrapper?
 
-The model is not the judge. It may propose semantic structure, but strict schemas and local validators recover evidence, numeric values, and units; validate the graph; materialize calculation dependencies; and reject unsupported structure. A deterministic TypeScript engine performs arithmetic, unit checking, failure propagation, correction, policy-aware selection, integrity scoring, report generation, and export. The complete judge demo does not call a model at all.
+The model is not the judge. It may propose semantic structure, but strict schemas and local validators recover evidence, numeric values, and units; validate the graph; materialize calculation dependencies; and reject unsupported structure. A deterministic TypeScript engine performs arithmetic, unit checking, failure propagation, correction, policy-aware selection, integrity scoring, report generation, and export.
 
 ## What is technically difficult about it?
 
@@ -26,7 +26,7 @@ Each node is a fact, policy, calculation, comparison, assumption, or recommendat
 
 ## How are corrections propagated?
 
-A correction targets a specific calculated node and supplies a replacement structured operation. Before evaluation, Decispec validates every operand, removes obsolete calculation-input edges, materializes the new dependencies, and rejects self-dependencies or cycles. The graph then reevaluates from the corrected operation. In the demo, the support calculation replaces an incompatible three-year operand with the quote’s 36-month duration, which changes Vendor A support, Vendor A total, and the recommendation.
+A correction targets a specific calculated node and supplies a replacement structured operation. Before evaluation, Decispec validates every operand, removes obsolete calculation-input edges, materializes the new dependencies, and rejects self-dependencies or cycles. The graph then reevaluates from the corrected operation.
 
 ## How is deterministic behavior preserved?
 
@@ -36,9 +36,9 @@ The engine accepts enumerated operations and typed units, not arbitrary expressi
 
 AI is useful for proposing a compact semantic plan from unstructured evidence: likely claims, source relationships, structured operations, dependencies, assumptions, candidate-selection structure, and possible corrections. It accelerates compilation from prose. It does not determine whether those proposals pass or what the final winner is.
 
-## Why is the live AI provider optional?
+## How does the AI provider remain constrained?
 
-The core product is the deterministic verification engine and proof experience. Keeping the provider optional makes the trust boundary visible, gives judges a reliable no-credential demonstration, and prevents a provider outage or invalid response from being disguised as a valid result. The public deployment intentionally has no API key configured and reports a safe configuration error in live mode.
+The core product is the deterministic verification engine and proof experience. The provider proposes structure only after explicit user action. A provider outage or invalid response produces a safe error and is never disguised as a valid result.
 
 ## How does Decispec prevent fabricated confidence?
 
@@ -49,7 +49,7 @@ The core product is the deterministic verification engine and proof experience. 
 - Assumptions remain labeled as assumptions.
 - Broken dependencies invalidate dependent conclusions.
 - The model cannot authoritatively set status, integrity, or the winner.
-- Live failures never fall back to the polished deterministic fixture.
+- Live failures never fall back to fabricated evaluated output.
 - Reports distinguish not verified, broken, valid, and corrected states.
 
 ## What happens when evidence is missing?
@@ -82,7 +82,7 @@ Decispec cannot guarantee that all relevant evidence was supplied or that a real
 2. **Real technical boundary:** AI proposes; deterministic validation and execution decide.
 3. **End-to-end coherence:** exact evidence, formulas, graph, correction, report, and export all agree.
 4. **Honest failure behavior:** missing credentials or invalid provider output produce safe errors, never fake success.
-5. **Demo reliability:** the complete experience is deployed, responsive, and credential-free.
+5. **Workflow reliability:** the complete experience is deployed, responsive, and guarded by safe failure behavior.
 
 ## Concise closing answer
 

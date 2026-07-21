@@ -1,14 +1,14 @@
 import { describe, expect, it } from "vitest";
-import { demoProject } from "../lib/demo/fixture";
-import { validateProviderProposal, demoAnalysisInput, AnalysisProviderError, type AnalysisResult, type ProviderAnalysisPlan } from "../lib/providers/analysis-provider";
+import { proofEngineAnalysisInput, proofEngineProject } from "./fixtures/proof-engine-project";
+import { validateProviderProposal, AnalysisProviderError, type AnalysisResult, type ProviderAnalysisPlan } from "../lib/providers/analysis-provider";
 import { executeLiveProof } from "../lib/providers/live-proof";
 import { numericRoleForUnit } from "../lib/providers/source-unit-recovery";
 import { buildSourceSegmentRegistry } from "../lib/providers/source-segments";
 
-type DemoCalculation = NonNullable<(typeof demoProject.graph.nodes)[number]["calculation"]>;
-type DemoArithmeticCalculation = Exclude<DemoCalculation, { operation: "select-candidate" | "convert-duration" }>;
+type RegressionCalculation = NonNullable<(typeof proofEngineProject.graph.nodes)[number]["calculation"]>;
+type RegressionArithmeticCalculation = Exclude<RegressionCalculation, { operation: "select-candidate" | "convert-duration" }>;
 
-function arithmeticCalculation(calculation: DemoArithmeticCalculation) {
+function arithmeticCalculation(calculation: RegressionArithmeticCalculation) {
   return {
     ...structuredClone(calculation),
     operands: calculation.operands.map((operand) => operand.kind === "ref" ? { ...operand } : { ...operand, label: operand.label ?? null }),
@@ -16,8 +16,8 @@ function arithmeticCalculation(calculation: DemoArithmeticCalculation) {
 }
 
 function proposal(): ProviderAnalysisPlan {
-  const registry = buildSourceSegmentRegistry(demoAnalysisInput());
-  const sourceBindings = demoProject.sourceSpans.map((span) => {
+  const registry = buildSourceSegmentRegistry(proofEngineAnalysisInput());
+  const sourceBindings = proofEngineProject.sourceSpans.map((span) => {
     const document = registry.documents.get(span.documentId)!;
     const start = document.content.indexOf(span.quote);
     const candidates = registry.segments.filter((segment) => segment.documentId === span.documentId && segment.start >= start && segment.end <= start + span.quote.length);
@@ -25,14 +25,14 @@ function proposal(): ProviderAnalysisPlan {
       ?? candidates.filter((segment) => span.emphasis && segment.content.includes(span.emphasis)).sort((a, b) => a.content.length - b.content.length)[0]
       ?? candidates.find((segment) => segment.content === span.quote);
     if (!selected) throw new Error(`Missing segment for ${span.id}.`);
-    const kind = demoProject.documents.find((document) => document.id === span.documentId)?.kind;
+    const kind = proofEngineProject.documents.find((document) => document.id === span.documentId)?.kind;
     return { bindingId: span.id, documentId: span.documentId, segmentIds: [selected.id], semanticRole: kind === "policy" ? "policy" as const : kind === "memo" ? "recommendation" as const : "fact" as const, emphasisSegmentIds: [selected.id] };
   });
   return {
     sourceBindings,
     graph: {
       id: "opaque-live-graph",
-      nodes: demoProject.graph.nodes.map((node) => ({
+      nodes: proofEngineProject.graph.nodes.map((node) => ({
         id: node.id,
         label: node.label,
         statement: node.statement,
@@ -41,7 +41,7 @@ function proposal(): ProviderAnalysisPlan {
         unitSpec: structuredClone(node.unitSpec),
         numericRole: node.calculation ? null : numericRoleForUnit(node.unitSpec.unit),
         sourceSpanIds: [...node.sourceSpanIds],
-        calculation: node.id === demoProject.graph.recommendation.nodeId
+        calculation: node.id === proofEngineProject.graph.recommendation.nodeId
           ? {
               operation: "select-candidate" as const,
               candidates: [
@@ -53,13 +53,13 @@ function proposal(): ProviderAnalysisPlan {
               outputUnit: "recommendation" as const,
               displayFormula: "Select the minimum eligible candidate",
             }
-          : node.calculation ? arithmeticCalculation(node.calculation as DemoArithmeticCalculation) : null,
+          : node.calculation ? arithmeticCalculation(node.calculation as RegressionArithmeticCalculation) : null,
       })),
-      edges: demoProject.graph.edges.map((edge) => ({ ...edge, kind: edge.kind === "untyped" ? null : edge.kind, label: edge.label ?? null })),
-      recommendation: structuredClone(demoProject.graph.recommendation),
-      corrections: demoProject.graph.corrections.map((correction) => ({
+      edges: proofEngineProject.graph.edges.map((edge) => ({ ...edge, kind: edge.kind === "untyped" ? null : edge.kind, label: edge.label ?? null })),
+      recommendation: structuredClone(proofEngineProject.graph.recommendation),
+      corrections: proofEngineProject.graph.corrections.map((correction) => ({
         ...structuredClone(correction),
-        replacementCalculation: arithmeticCalculation(correction.replacementCalculation as DemoArithmeticCalculation),
+        replacementCalculation: arithmeticCalculation(correction.replacementCalculation as RegressionArithmeticCalculation),
       })),
     },
   };
@@ -68,7 +68,7 @@ function proposal(): ProviderAnalysisPlan {
 function resultFrom(plan: ProviderAnalysisPlan): AnalysisResult {
   return {
     provider: { name: "OpenAI", mode: "live-openai", model: "gpt-5.6-terra" },
-    plan: validateProviderProposal(plan, demoAnalysisInput()),
+    plan: validateProviderProposal(plan, proofEngineAnalysisInput()),
     requestId: "req_semantic_test",
     latencyMs: 1234,
     usage: { inputTokens: 100, outputTokens: 200, totalTokens: 300 },

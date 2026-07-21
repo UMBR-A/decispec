@@ -1,12 +1,12 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { handleAnalysisRequest } from "../app/api/analyze/route";
-import { demoProject } from "../lib/demo/fixture";
+import { proofEngineProject } from "./fixtures/proof-engine-project";
 import { AnalysisProviderError, type AnalysisInput, type AnalysisProvider, type AnalysisResult } from "../lib/providers/analysis-provider";
 
 const input: AnalysisInput = { documents: [{ id: "source", title: "Source", content: "Exact evidence." }], draftMemo: "Select the supported option." };
 
 const result: AnalysisResult = {
-  plan: { sourceSpans: structuredClone(demoProject.sourceSpans), graph: structuredClone(demoProject.graph) },
+  plan: { sourceSpans: structuredClone(proofEngineProject.sourceSpans), graph: structuredClone(proofEngineProject.graph) },
   provider: { name: "Test provider", mode: "live-openai", model: "gpt-5.6" },
   usage: { inputTokens: 10, outputTokens: 20, totalTokens: 30 },
   requestId: null,
